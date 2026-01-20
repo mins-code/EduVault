@@ -298,47 +298,6 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                 </div>
             )}
 
-            {/* Key Certifications (Condensed List) */}
-            {certifications.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
-                    <h2 style={{
-                        fontFamily: 'Outfit, sans-serif',
-                        fontSize: '14pt',
-                        fontWeight: 600,
-                        color: '#1E3A8A',
-                        margin: '0 0 12px 0',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        borderBottom: '1.5px solid #0D9488',
-                        paddingBottom: '4px'
-                    }}>
-                        Key Certifications
-                    </h2>
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: certifications.length > 2 ? 'repeat(2, 1fr)' : '1fr',
-                        gap: '6px'
-                    }}>
-                        {certifications.map((doc) => (
-                            <div key={doc._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                <span style={{ fontSize: '10pt', color: '#1F2937' }}>
-                                    • {doc.originalName.replace(/\.[^/.]+$/, '')}
-                                </span>
-                                <span style={{
-                                    fontSize: '9pt',
-                                    color: '#9CA3AF',
-                                    fontFamily: 'JetBrains Mono, monospace',
-                                    marginLeft: '8px',
-                                    whiteSpace: 'nowrap'
-                                }}>
-                                    {formatDate(doc.uploadDate)}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             {/* Footer */}
             <div style={{
                 marginTop: '32px',

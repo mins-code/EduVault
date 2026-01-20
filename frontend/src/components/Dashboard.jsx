@@ -40,7 +40,7 @@ export default function Dashboard() {
 
     const handlePrintResume = useReactToPrint({
         contentRef: resumeRef,
-        documentTitle: `${userData?.fullName?.replace(/\s+/g, '_') || 'Resume'}_Resume`,
+        documentTitle: `${userData?.username || 'Resume'}_Resume`,
         onAfterPrint: () => console.log('Resume downloaded successfully')
     })
 
@@ -232,8 +232,8 @@ export default function Dashboard() {
                                                                 <div key={cat} className="flex items-center justify-between text-sm">
                                                                     <span className="text-text-secondary">{cat}</span>
                                                                     <span className={`px-2 py-1 rounded text-xs ${hasDoc
-                                                                            ? 'bg-accent-teal/10 text-accent-teal'
-                                                                            : 'bg-text-muted/10 text-text-muted'
+                                                                        ? 'bg-accent-teal/10 text-accent-teal'
+                                                                        : 'bg-text-muted/10 text-text-muted'
                                                                         }`}>
                                                                         {hasDoc ? '✓ Added' : 'Pending'}
                                                                     </span>

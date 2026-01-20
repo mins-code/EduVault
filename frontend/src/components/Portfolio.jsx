@@ -58,7 +58,7 @@ export default function Portfolio() {
 
     const handleDownloadPortfolio = useReactToPrint({
         contentRef: resumeRef,
-        documentTitle: `${portfolioData?.user?.name?.replace(/\s+/g, '_') || 'Portfolio'}_Resume`,
+        documentTitle: `${portfolioData?.user?.username || 'Portfolio'}_Portfolio`,
         onAfterPrint: () => console.log('Portfolio PDF downloaded successfully')
     })
 

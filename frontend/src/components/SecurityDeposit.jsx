@@ -14,7 +14,7 @@ export default function SecurityDeposit() {
     const [uploadProgress, setUploadProgress] = useState(0)
     const [uploadSuccess, setUploadSuccess] = useState(false)
     const [userId, setUserId] = useState(null)
-    const [guideExpanded, setGuideExpanded] = useState(true)
+    const [guideExpanded, setGuideExpanded] = useState(false)
 
     const categories = ['Academics', 'Internships', 'Projects', 'Certifications', 'Extracurriculars']
 
