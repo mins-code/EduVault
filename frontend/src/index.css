@@ -1,0 +1,302 @@
+/* === VAULT NIGHT DESIGN SYSTEM === */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap');
+
+/* Tailwind Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === BASE STYLES === */
+@layer base {
+
+  /* Professional CSS Reset */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  /* Premium Vertical Gradient Background */
+  body {
+    @apply font-sans text-text-primary;
+    min-height: 100vh;
+    background: linear-gradient(180deg,
+        #0A0F1F 0%,
+        #0B1220 50%,
+        #020617 100%);
+    background-attachment: fixed;
+  }
+
+  /* Typography Hierarchy */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display tracking-tight;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  p {
+    line-height: 1.6;
+  }
+
+  /* Remove default button styles */
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+}
+
+/* === COMPONENT UTILITIES === */
+@layer components {
+
+  /* Glass Panel Component */
+  .glass-panel {
+    @apply bg-surface-1/65 backdrop-blur-vault border border-border-subtle;
+    @apply rounded-vault-lg shadow-vault;
+  }
+
+  /* Vault Card Component */
+  .vault-card {
+    @apply bg-gradient-card border border-border-subtle rounded-vault;
+    @apply shadow-vault transition-all duration-vault;
+  }
+
+  .vault-card:hover {
+    @apply border-border-glow shadow-vault-glow-hover;
+    transform: translateY(-4px);
+  }
+
+  /* Primary Button */
+  .btn-primary {
+    @apply bg-gradient-primary text-bg-bottom font-medium;
+    @apply px-6 py-3 rounded-vault shadow-vault;
+    @apply transition-all duration-vault;
+    @apply hover:shadow-vault-glow-hover;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+  }
+
+  .btn-primary:active {
+    @apply animate-vault-press;
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply bg-transparent border border-accent-cyan text-accent-cyan;
+    @apply px-6 py-3 rounded-vault font-medium;
+    @apply transition-all duration-vault;
+  }
+
+  .btn-secondary:hover {
+    @apply bg-accent-cyan/10 shadow-vault-glow;
+  }
+
+  .btn-secondary:active {
+    @apply animate-vault-press;
+  }
+
+  /* Vault Input */
+  .vault-input {
+    @apply bg-bg-bottom border border-border-default;
+    @apply text-text-primary placeholder:text-text-muted;
+    @apply px-4 py-3 rounded-vault-sm;
+    @apply transition-all duration-vault;
+    @apply focus:outline-none focus:border-accent-cyan focus:shadow-vault-glow;
+  }
+
+  /* Surface Panel */
+  .surface-panel {
+    @apply bg-surface-1 border border-border-subtle rounded-vault-lg;
+    @apply shadow-vault p-6;
+  }
+
+  /* Elevated Surface */
+  .surface-elevated {
+    @apply bg-surface-2 border border-border-subtle rounded-vault-lg;
+    @apply shadow-vault-lg p-6;
+  }
+
+  /* Icon Hover Effect */
+  .vault-icon {
+    @apply text-text-secondary transition-all duration-vault;
+  }
+
+  .vault-icon:hover {
+    @apply text-accent-cyan;
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4));
+  }
+
+  /* Divider Line */
+  .vault-divider {
+    @apply h-px bg-gradient-to-r from-transparent via-border-default to-transparent;
+  }
+
+  /* Badge Component */
+  .vault-badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full;
+    @apply bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/30;
+    @apply text-sm font-medium;
+  }
+
+  /* Success Badge */
+  .vault-badge-success {
+    @apply bg-accent-teal/10 text-accent-teal border border-accent-teal/30;
+  }
+
+  /* Highlight Badge */
+  .vault-badge-highlight {
+    @apply bg-accent-violet/10 text-accent-violet border border-accent-violet/30;
+  }
+}
+
+/* === UTILITY CLASSES === */
+@layer utilities {
+
+  /* Text Gradient */
+  .text-gradient-primary {
+    @apply bg-gradient-primary bg-clip-text text-transparent;
+  }
+
+  .text-gradient-accent {
+    @apply bg-gradient-accent bg-clip-text text-transparent;
+  }
+
+  /* Glow Effects */
+  .glow-cyan {
+    box-shadow: 0 0 24px rgba(56, 189, 248, 0.3);
+  }
+
+  .glow-teal {
+    box-shadow: 0 0 24px rgba(45, 212, 191, 0.3);
+  }
+
+  .glow-violet {
+    box-shadow: 0 0 24px rgba(139, 92, 246, 0.3);
+  }
+
+  /* Hover Lift */
+  .hover-lift {
+    @apply transition-transform duration-vault;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Smooth Transitions */
+  .transition-vault {
+    @apply transition-all duration-vault ease-vault;
+  }
+}
+
+/* === MICRO-INTERACTIONS === */
+
+/* Upload Success Animation */
+@keyframes upload-success {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.upload-success {
+  animation: upload-success 0.6s ease-out, vault-glow 2s ease-in-out infinite;
+}
+
+/* Page Transition */
+.page-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+/* Loading Dots */
+@keyframes loading-dots {
+
+  0%,
+  20% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.3;
+  }
+}
+
+.loading-dot {
+  animation: loading-dots 1.4s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Document Card Fade In Animation */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Page Transition */
+.page-transition {
+  animation: pageTransition 0.3s ease-out;
+}
+
+@keyframes pageTransition {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
