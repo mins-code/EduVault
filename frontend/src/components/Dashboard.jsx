@@ -29,12 +29,14 @@ export default function Dashboard() {
 
     const fetchDocuments = async (uid) => {
         try {
-            const response = await api.get(`/api/documents?userId=${uid}`)
+            console.log('🔄 Fetching documents for Dashboard:', uid)
+            const response = await api.get(`/api/documents/user/${uid}`)
+            console.log('📥 Dashboard documents received:', response.data.count)
             if (response.data.success) {
                 setDocuments(response.data.documents)
             }
         } catch (error) {
-            console.error('Error fetching documents:', error)
+            console.error('❌ Dashboard fetch error:', error)
         }
     }
 

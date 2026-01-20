@@ -101,6 +101,10 @@ export default function SecurityDeposit() {
 
             if (response.data.success) {
                 setUploadSuccess(true)
+                // Redirect to Vault after 2 seconds to show success message
+                setTimeout(() => {
+                    window.location.href = '/vault'
+                }, 2000)
             }
         } catch (error) {
             console.error('Upload error:', error)
@@ -387,7 +391,7 @@ export default function SecurityDeposit() {
                                                 </div>
                                             </div>
                                             <h5 className="text-2xl font-display font-semibold tracking-tight text-text-primary">
-                                                Vaulting Document...
+                                                Encrypting and Vaulting to Cloud...
                                             </h5>
                                             <div className="max-w-md mx-auto">
                                                 <div className="h-2 bg-surface-1 rounded-full overflow-hidden">

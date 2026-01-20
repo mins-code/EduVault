@@ -18,6 +18,14 @@ const documentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    cloudinaryUrl: {
+        type: String,
+        required: false  // Optional for backward compatibility
+    },
+    cloudinaryPublicId: {
+        type: String,
+        required: false  // Optional for backward compatibility
+    },
     fileSize: {
         type: Number,
         required: true

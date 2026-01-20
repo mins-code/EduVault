@@ -42,12 +42,15 @@ export default function TheVault() {
 
     const fetchDocuments = async (uid) => {
         try {
-            const response = await api.get(`/api/documents?userId=${uid}`)
+            console.log('🔄 Fetching documents for user:', uid)
+            const response = await api.get(`/api/documents/user/${uid}`)
+            console.log('📥 Documents received:', response.data)
             if (response.data.success) {
                 setDocuments(response.data.documents)
+                console.log('✅ Documents loaded:', response.data.count)
             }
         } catch (error) {
-            console.error('Error fetching documents:', error)
+            console.error('❌ Error fetching documents:', error)
         }
     }
 
