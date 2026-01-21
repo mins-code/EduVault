@@ -547,6 +547,18 @@ export default function TheVault() {
                                                             </div>
                                                         </div>
 
+                                                        {/* Derived Description (if available) */}
+                                                        {doc.derivedDescription && (
+                                                            <div className="mb-6 p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
+                                                                <p className="text-xs text-text-muted mb-1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                                                    AI Extracted:
+                                                                </p>
+                                                                <p className="text-sm text-text-secondary leading-relaxed" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                                                    {doc.derivedDescription}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
                                                         {/* View Document Button */}
                                                         <button
                                                             onClick={() => handleViewDocument(doc)}

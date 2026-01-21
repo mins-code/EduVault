@@ -2,11 +2,125 @@ const express = require('express');
 const Document = require('../models/Document');
 const upload = require('../middleware/upload');
 const cloudinary = require('../config/cloudinary');
+const pdfParse = require('pdf-parse');
+const streamifier = require('streamifier');
+const axios = require('axios');
 
 const router = express.Router();
 
+// Helper function to determine category based on text content
+const determineCategory = (text) => {
+    const lowerText = text.toLowerCase();
+
+    // Rule-based categorization
+    if (lowerText.includes('project') && lowerText.includes('implementation')) {
+        return 'Project';
+    }
+    if (lowerText.includes('internship') && lowerText.includes('company')) {
+        return 'Internship';
+    }
+    if (lowerText.includes('certificate') && lowerText.includes('awarded')) {
+        return 'Certification';
+    }
+
+    // Default - return null to use user-provided category
+    return null;
+};
+
+// Helper function to extract title (first non-empty line)
+const extractTitle = (text) => {
+    const lines = text.split('\n');
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.length > 0) {
+            // Limit title length to 100 characters
+            return trimmed.substring(0, 100);
+        }
+    }
+    return null;
+};
+
+// Helper function to extract description (first 3 meaningful sentences)
+const extractDescription = (text) => {
+    if (!text || text.trim().length === 0) {
+        console.log('⚠️ extractDescription: Empty text provided');
+        return null;
+    }
+
+    // Clean up the text - normalize whitespace but preserve line breaks initially
+    let cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    console.log('🔍 extractDescription: Processing text of length', cleanText.length);
+
+    // Try Method 1: Extract by sentences with punctuation
+    const sentenceRegex = /[^.!?]+[.!?]+/g;
+    const sentences = cleanText.match(sentenceRegex) || [];
+
+    if (sentences.length > 0) {
+        const meaningfulSentences = sentences
+            .map(s => s.trim())
+            .filter(s => s.length >= 10)
+            .slice(0, 3);
+
+        if (meaningfulSentences.length > 0) {
+            const result = meaningfulSentences.join(' ').substring(0, 500);
+            console.log('✅ extractDescription: Found via sentences, length:', result.length);
+            return result;
+        }
+    }
+
+    // Try Method 2: Extract by lines (for PDFs without proper punctuation)
+    const lines = cleanText
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length >= 15); // At least 15 chars per line
+
+    if (lines.length > 0) {
+        // Skip the first line (likely title) and take next 3-5 lines
+        const descLines = lines.slice(1, 6).join(' ').substring(0, 500);
+        if (descLines.length >= 20) {
+            console.log('✅ extractDescription: Found via lines, length:', descLines.length);
+            return descLines;
+        }
+    }
+
+    // Try Method 3: Just take first 300 characters after removing excess whitespace
+    const fallback = cleanText.replace(/\s+/g, ' ').trim().substring(0, 300);
+    if (fallback.length >= 20) {
+        console.log('✅ extractDescription: Using fallback, length:', fallback.length);
+        return fallback;
+    }
+
+    console.log('⚠️ extractDescription: Could not extract meaningful description');
+    return null;
+};
+
+// Helper function to upload buffer to Cloudinary using upload_stream
+const uploadToCloudinary = (buffer, originalName) => {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'eduvault_docs',
+                resource_type: 'image',
+                type: 'private',
+                public_id: `${Date.now()}_${originalName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9]/g, '_')}`
+            },
+            (error, result) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(result);
+                }
+            }
+        );
+
+        // Pipe the buffer to the upload stream
+        streamifier.createReadStream(buffer).pipe(uploadStream);
+    });
+};
+
 // @route   POST /api/documents/upload
-// @desc    Upload a document to Cloudinary
+// @desc    Upload a document to Cloudinary with PDF content extraction
 // @access  Private (requires authentication)
 router.post('/upload', upload.single('file'), async (req, res) => {
     try {
@@ -24,32 +138,81 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         console.log('📁 File received:', {
             originalname: req.file.originalname,
             size: req.file.size,
-            path: req.file.path,
-            filename: req.file.filename
+            mimetype: req.file.mimetype,
+            bufferLength: req.file.buffer?.length
         });
 
         const { category, tags, userId } = req.body;
 
         // Validate required fields
-        if (!category || !userId) {
-            console.log('❌ Missing required fields:', { category, userId });
-            // Delete uploaded file from Cloudinary if validation fails
-            if (req.file.filename) {
-                await cloudinary.uploader.destroy(req.file.filename, {
-                    type: 'private',
-                    resource_type: 'image',
-                    invalidate: true
-                });
-            }
+        if (!userId) {
+            console.log('❌ Missing userId');
             return res.status(400).json({
                 success: false,
-                message: 'Category and userId are required'
+                message: 'userId is required'
             });
         }
 
         console.log('✅ Validation passed');
-        console.log('☁️  File uploaded to Cloudinary:', req.file.path);
-        console.log('🆔 Cloudinary Public ID:', req.file.filename);
+
+        // Extract PDF content if file is a PDF
+        let extractedData = {
+            derivedTitle: null,
+            derivedDescription: null,
+            suggestedCategory: null
+        };
+
+        const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
+
+        console.log('🔍 File check:', {
+            originalname: req.file.originalname,
+            isPDF: isPDF,
+            hasBuffer: !!req.file.buffer,
+            bufferLength: req.file.buffer?.length
+        });
+
+        if (isPDF && req.file.buffer) {
+            console.log('📄 PDF detected - extracting content from buffer...');
+            try {
+                const pdfData = await pdfParse(req.file.buffer);
+                const extractedText = pdfData.text || '';
+
+                console.log('📝 PDF text extracted, length:', extractedText.length);
+                console.log('📝 First 500 chars:', extractedText.substring(0, 500));
+
+                // Rule-based categorization
+                extractedData.suggestedCategory = determineCategory(extractedText);
+                console.log('🏷️  Suggested category:', extractedData.suggestedCategory || 'None (using user-provided)');
+
+                // Extract title (first non-empty line)
+                extractedData.derivedTitle = extractTitle(extractedText);
+                console.log('📌 Derived title:', extractedData.derivedTitle);
+
+                // Extract description (first 3 meaningful sentences)
+                extractedData.derivedDescription = extractDescription(extractedText);
+                console.log('📋 Derived description length:', extractedData.derivedDescription?.length || 0);
+                console.log('📋 Derived description:', extractedData.derivedDescription);
+
+            } catch (pdfError) {
+                console.error('⚠️ PDF extraction error (continuing with upload):', pdfError.message);
+                console.error('⚠️ PDF extraction stack:', pdfError.stack);
+                // Use filename as fallback title
+                extractedData.derivedTitle = req.file.originalname.replace(/\.[^/.]+$/, '');
+            }
+        } else {
+            console.log('⚠️ Skipping PDF extraction:', { isPDF, hasBuffer: !!req.file.buffer });
+            // Non-PDF files: use filename as title
+            extractedData.derivedTitle = req.file.originalname.replace(/\.[^/.]+$/, '');
+        }
+
+        // Upload buffer to Cloudinary manually
+        console.log('☁️  Uploading to Cloudinary...');
+        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
+
+        console.log('✅ Cloudinary upload successful:', {
+            public_id: cloudinaryResult.public_id,
+            secure_url: cloudinaryResult.secure_url
+        });
 
         // Parse tags if it's a string
         let parsedTags = [];
@@ -57,17 +220,22 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
         }
 
-        // Create document record with Cloudinary data
+        // Determine final category: use suggested if available, otherwise use provided
+        const finalCategory = extractedData.suggestedCategory || category || 'Other';
+
+        // Create document record with Cloudinary data and extracted content
         const newDocument = new Document({
             userId: userId,
-            fileName: req.file.filename || req.file.originalname,
+            fileName: cloudinaryResult.public_id,
             originalName: req.file.originalname,
-            fileUrl: req.file.path,  // Cloudinary secure_url
-            cloudinaryUrl: req.file.path,  // Cloudinary secure_url
-            cloudinaryPublicId: req.file.filename,  // Cloudinary public_id
+            fileUrl: cloudinaryResult.secure_url,
+            cloudinaryUrl: cloudinaryResult.secure_url,
+            cloudinaryPublicId: cloudinaryResult.public_id,
             fileSize: req.file.size,
-            category: category,
-            tags: parsedTags
+            category: finalCategory,
+            tags: parsedTags,
+            derivedTitle: extractedData.derivedTitle,
+            derivedDescription: extractedData.derivedDescription
         });
 
         console.log('💾 Saving document to MongoDB...');
@@ -84,34 +252,150 @@ router.post('/upload', upload.single('file'), async (req, res) => {
                 category: newDocument.category,
                 uploadDate: newDocument.uploadDate,
                 cloudinaryUrl: newDocument.cloudinaryUrl,
-                cloudinaryPublicId: newDocument.cloudinaryPublicId
+                cloudinaryPublicId: newDocument.cloudinaryPublicId,
+                // Include extracted data for review modal
+                derivedTitle: newDocument.derivedTitle,
+                derivedDescription: newDocument.derivedDescription,
+                suggestedCategory: extractedData.suggestedCategory
             }
         };
 
         console.log('📤 Sending response to frontend');
+        console.log('📤 Response data:', JSON.stringify(responseData, null, 2));
         res.status(201).json(responseData);
 
     } catch (error) {
         console.error('❌ Upload error:', error);
         console.error('Error stack:', error.stack);
 
-        // Clean up Cloudinary file if database save fails
-        if (req.file && req.file.filename) {
-            try {
-                console.log('🧹 Cleaning up Cloudinary file...');
-                await cloudinary.uploader.destroy(req.file.filename, {
-                    type: 'private',
-                    resource_type: 'image',
-                    invalidate: true
-                });
-            } catch (cleanupError) {
-                console.error('❌ Cleanup error:', cleanupError);
-            }
-        }
-
         res.status(500).json({
             success: false,
             message: 'Error uploading document',
+            error: error.message
+        });
+    }
+});
+
+// @route   POST /api/documents/extract/:id
+// @desc    Extract content from uploaded PDF
+// @access  Private
+router.post('/extract/:id', async (req, res) => {
+    try {
+        console.log('📄 PDF extraction request for document:', req.params.id);
+
+        const document = await Document.findById(req.params.id);
+
+        if (!document) {
+            return res.status(404).json({
+                success: false,
+                message: 'Document not found'
+            });
+        }
+
+        if (!document.cloudinaryPublicId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Document has no cloud storage'
+            });
+        }
+
+        console.log('📂 Document found:', document.originalName);
+        console.log('🔑 Cloudinary Public ID:', document.cloudinaryPublicId);
+
+        let pdfBuffer = null;
+
+        // Try method 1: resource_type 'raw' (PDFs are usually stored as raw with auto)
+        try {
+            console.log('📥 Trying raw resource type...');
+            const signedUrl = cloudinary.url(document.cloudinaryPublicId, {
+                type: 'private',
+                sign_url: true,
+                resource_type: 'raw'
+            });
+            console.log('🔗 Signed URL (raw):', signedUrl);
+
+            const response = await axios.get(signedUrl, {
+                responseType: 'arraybuffer',
+                timeout: 30000
+            });
+            pdfBuffer = Buffer.from(response.data);
+            console.log('📊 Downloaded via raw:', pdfBuffer.length, 'bytes');
+        } catch (err1) {
+            console.log('⚠️ Raw method failed:', err1.message);
+
+            // Try method 2: resource_type 'image' 
+            try {
+                console.log('📥 Trying image resource type...');
+                const signedUrl = cloudinary.url(document.cloudinaryPublicId, {
+                    type: 'private',
+                    sign_url: true,
+                    resource_type: 'image'
+                });
+                console.log('🔗 Signed URL (image):', signedUrl);
+
+                const response = await axios.get(signedUrl, {
+                    responseType: 'arraybuffer',
+                    timeout: 30000
+                });
+                pdfBuffer = Buffer.from(response.data);
+                console.log('📊 Downloaded via image:', pdfBuffer.length, 'bytes');
+            } catch (err2) {
+                console.log('⚠️ Image method failed:', err2.message);
+
+                // Try method 3: Use cloudinaryUrl directly (if stored properly)
+                try {
+                    console.log('📥 Trying stored cloudinaryUrl...');
+                    if (document.cloudinaryUrl) {
+                        // Add signature to existing URL
+                        const response = await axios.get(document.cloudinaryUrl, {
+                            responseType: 'arraybuffer',
+                            timeout: 30000
+                        });
+                        pdfBuffer = Buffer.from(response.data);
+                        console.log('📊 Downloaded via cloudinaryUrl:', pdfBuffer.length, 'bytes');
+                    } else {
+                        throw new Error('No cloudinaryUrl available');
+                    }
+                } catch (err3) {
+                    console.log('⚠️ cloudinaryUrl method failed:', err3.message);
+                    throw new Error('Unable to download PDF from cloud storage');
+                }
+            }
+        }
+
+        console.log('🔍 Extracting text from PDF...');
+        const extractedData = await extractPDFContent(pdfBuffer);
+
+        console.log('📝 Extracted data:', {
+            title: extractedData.derivedTitle,
+            category: extractedData.suggestedCategory,
+            descriptionLength: extractedData.derivedDescription?.length || 0,
+            fullTextPreview: extractedData.fullText?.substring(0, 100)
+        });
+
+        // Update document with extracted data
+        document.derivedTitle = extractedData.derivedTitle || document.derivedTitle;
+        document.derivedDescription = extractedData.derivedDescription;
+        await document.save();
+
+        console.log('✅ PDF extraction complete and saved to DB');
+
+        res.json({
+            success: true,
+            message: 'PDF content extracted successfully',
+            extractedData: {
+                derivedTitle: extractedData.derivedTitle,
+                derivedDescription: extractedData.derivedDescription,
+                suggestedCategory: extractedData.suggestedCategory
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ PDF extraction error:', error.message);
+        console.error('Error stack:', error.stack);
+        res.status(500).json({
+            success: false,
+            message: 'Error extracting PDF content',
             error: error.message
         });
     }
@@ -355,6 +639,65 @@ router.patch('/:id/visibility', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error updating document visibility',
+            error: error.message
+        });
+    }
+});
+
+// @route   PATCH /api/documents/:id/metadata
+// @desc    Update document derived metadata (title, description)
+// @access  Private
+router.patch('/:id/metadata', async (req, res) => {
+    try {
+        const { derivedTitle, derivedDescription, category } = req.body;
+        console.log(`📝 Metadata update request for document: ${req.params.id}`);
+
+        // Find document
+        const document = await Document.findById(req.params.id);
+
+        if (!document) {
+            return res.status(404).json({
+                success: false,
+                message: 'Document not found'
+            });
+        }
+
+        // Update fields if provided
+        if (derivedTitle !== undefined) {
+            document.derivedTitle = derivedTitle;
+        }
+        if (derivedDescription !== undefined) {
+            document.derivedDescription = derivedDescription;
+        }
+        if (category !== undefined) {
+            document.category = category;
+        }
+
+        // Mark as user-edited
+        document.userEdited = true;
+
+        await document.save();
+
+        console.log(`✅ Metadata updated for: ${document.originalName}`);
+
+        res.json({
+            success: true,
+            message: 'Document metadata updated successfully',
+            document: {
+                id: document._id,
+                originalName: document.originalName,
+                derivedTitle: document.derivedTitle,
+                derivedDescription: document.derivedDescription,
+                category: document.category,
+                userEdited: document.userEdited
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Metadata update error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating document metadata',
             error: error.message
         });
     }

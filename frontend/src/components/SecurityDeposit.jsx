@@ -16,6 +16,15 @@ export default function SecurityDeposit() {
     const [userId, setUserId] = useState(null)
     const [guideExpanded, setGuideExpanded] = useState(false)
 
+    // PDF Extraction Review Modal State
+    const [showReviewModal, setShowReviewModal] = useState(false)
+    const [extractedData, setExtractedData] = useState(null)
+    const [reviewTitle, setReviewTitle] = useState('')
+    const [reviewDescription, setReviewDescription] = useState('')
+    const [reviewCategory, setReviewCategory] = useState('')
+    const [uploadedDocId, setUploadedDocId] = useState(null)
+    const [isExtracting, setIsExtracting] = useState(false)
+
     const categories = ['Academics', 'Internships', 'Projects', 'Certifications', 'Extracurriculars']
 
     useEffect(() => {
@@ -79,6 +88,12 @@ export default function SecurityDeposit() {
         formData.append('tags', JSON.stringify([]))
 
         try {
+            // Check if PDF for extraction indicator
+            const isPDF = selectedFile.name.toLowerCase().endsWith('.pdf')
+            if (isPDF) {
+                setIsExtracting(true)
+            }
+
             // Simulate progress
             const progressInterval = setInterval(() => {
                 setUploadProgress(prev => {
@@ -98,19 +113,74 @@ export default function SecurityDeposit() {
 
             clearInterval(progressInterval)
             setUploadProgress(100)
+            setIsExtracting(false)
 
             if (response.data.success) {
-                setUploadSuccess(true)
-                // Redirect to Vault after 2 seconds to show success message
-                setTimeout(() => {
-                    window.location.href = '/vault'
-                }, 2000)
+                const doc = response.data.document
+                const isPDF = selectedFile.name.toLowerCase().endsWith('.pdf')
+
+                console.log('📤 Upload response:', doc)
+
+                // If PDF and has extracted data, show review modal
+                if (isPDF && (doc.derivedTitle || doc.derivedDescription || doc.suggestedCategory)) {
+                    console.log('📄 PDF extracted data received:', {
+                        title: doc.derivedTitle,
+                        description: doc.derivedDescription,
+                        category: doc.suggestedCategory
+                    })
+
+                    // Show review modal with extracted data
+                    setExtractedData(doc)
+                    setReviewTitle(doc.derivedTitle || doc.fileName.replace(/\.[^/.]+$/, ''))
+                    setReviewDescription(doc.derivedDescription || '')
+                    setReviewCategory(doc.suggestedCategory || category)
+                    setUploadedDocId(doc.id)
+                    setShowReviewModal(true)
+                    setUploading(false)
+                } else {
+                    // Not a PDF or no extracted data, go directly to vault
+                    console.log('✅ Upload complete, redirecting to vault')
+                    setUploadSuccess(true)
+                    setTimeout(() => {
+                        navigate('/vault')
+                    }, 2000)
+                }
             }
         } catch (error) {
             console.error('Upload error:', error)
             setUploading(false)
             setUploadProgress(0)
+            setIsExtracting(false)
             alert(error.response?.data?.message || 'Upload failed')
+        }
+    }
+
+    const handleConfirmMetadata = async () => {
+        try {
+            // Check if user made any changes
+            const hasChanges =
+                reviewTitle !== extractedData.derivedTitle ||
+                reviewDescription !== extractedData.derivedDescription ||
+                reviewCategory !== extractedData.category
+
+            if (hasChanges) {
+                // Update metadata with userEdited flag
+                await api.patch(`/api/documents/${uploadedDocId}/metadata`, {
+                    derivedTitle: reviewTitle,
+                    derivedDescription: reviewDescription,
+                    category: reviewCategory
+                })
+            }
+
+            // Close modal and show success
+            setShowReviewModal(false)
+            setUploadSuccess(true)
+            setTimeout(() => {
+                navigate('/vault')
+            }, 2000)
+        } catch (error) {
+            console.error('Metadata update error:', error)
+            alert('Failed to update metadata')
         }
     }
 
@@ -391,19 +461,28 @@ export default function SecurityDeposit() {
                                                 </div>
                                             </div>
                                             <h5 className="text-2xl font-display font-semibold tracking-tight text-text-primary">
-                                                Encrypting and Vaulting to Cloud...
+                                                {isExtracting ? '📄 Extracting PDF Content...' : 'Encrypting and Vaulting to Cloud...'}
                                             </h5>
+                                            {isExtracting && (
+                                                <p className="text-sm text-text-muted" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                                    Reading document to extract title & description
+                                                </p>
+                                            )}
                                             <div className="max-w-md mx-auto">
                                                 <div className="h-2 bg-surface-1 rounded-full overflow-hidden">
                                                     <div
                                                         className="h-full transition-all duration-300"
                                                         style={{
-                                                            width: `${uploadProgress}%`,
-                                                            background: 'linear-gradient(135deg, #38BDF8 0%, #2DD4BF 100%)'
+                                                            width: isExtracting ? '100%' : `${uploadProgress}%`,
+                                                            background: isExtracting
+                                                                ? 'linear-gradient(135deg, #A855F7 0%, #8B5CF6 100%)'
+                                                                : 'linear-gradient(135deg, #38BDF8 0%, #2DD4BF 100%)'
                                                         }}
                                                     />
                                                 </div>
-                                                <p className="text-sm font-mono text-text-secondary mt-3">{uploadProgress}%</p>
+                                                <p className="text-sm font-mono text-text-secondary mt-3">
+                                                    {isExtracting ? 'Extracting...' : `${uploadProgress}%`}
+                                                </p>
                                             </div>
                                         </div>
                                     )}
@@ -449,6 +528,100 @@ export default function SecurityDeposit() {
                     </div>
                 </main>
             </div>
+
+            {/* PDF Extraction Review Modal */}
+            {showReviewModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}>
+                    <div
+                        className="w-full max-w-2xl rounded-vault-lg border border-cyan-500/30 p-8 shadow-vault-lg"
+                        style={{
+                            background: 'rgba(15, 23, 42, 0.95)',
+                            backdropFilter: 'blur(20px)'
+                        }}
+                    >
+                        {/* Header */}
+                        <div className="mb-6">
+                            <h3 className="text-2xl font-bold text-text-primary mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                                📄 Review Document Details
+                            </h3>
+                            <p className="text-sm text-text-muted" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                We've extracted the following from your PDF. Edit if needed before vaulting.
+                            </p>
+                        </div>
+
+                        {/* Title Field */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-text-secondary mb-2" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                Title
+                            </label>
+                            <input
+                                type="text"
+                                value={reviewTitle}
+                                onChange={(e) => setReviewTitle(e.target.value)}
+                                className="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700/50 text-text-primary focus:border-cyan-500 focus:outline-none transition-colors"
+                                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                                placeholder="Enter document title..."
+                            />
+                        </div>
+
+                        {/* Category Dropdown */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-text-secondary mb-2" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                Category
+                            </label>
+                            <select
+                                value={reviewCategory}
+                                onChange={(e) => setReviewCategory(e.target.value)}
+                                className="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700/50 text-text-primary focus:border-cyan-500 focus:outline-none transition-colors"
+                                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                            >
+                                {categories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Description Field */}
+                        <div className="mb-8">
+                            <label className="block text-sm font-medium text-text-secondary mb-2" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                Description
+                            </label>
+                            <textarea
+                                value={reviewDescription}
+                                onChange={(e) => setReviewDescription(e.target.value)}
+                                rows={5}
+                                className="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700/50 text-text-primary focus:border-cyan-500 focus:outline-none transition-colors resize-none"
+                                style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.875rem', lineHeight: '1.5' }}
+                                placeholder="Enter document description..."
+                            />
+                            <p className="text-xs text-text-muted mt-2" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                {reviewDescription.length} / 300 characters
+                            </p>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-end gap-4">
+                            <button
+                                onClick={() => setShowReviewModal(false)}
+                                className="px-6 py-3 rounded-lg bg-slate-700/50 border border-slate-600/50 text-text-secondary hover:bg-slate-700 transition-colors"
+                                style={{ fontFamily: 'JetBrains Mono, monospace' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmMetadata}
+                                className="px-8 py-3 rounded-lg font-semibold text-white transition-all duration-vault hover:shadow-vault-glow"
+                                style={{
+                                    background: 'linear-gradient(135deg, #38BDF8 0%, #2DD4BF 100%)',
+                                    fontFamily: 'JetBrains Mono, monospace'
+                                }}
+                            >
+                                ✓ Confirm & Vault
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

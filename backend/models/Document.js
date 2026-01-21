@@ -42,6 +42,18 @@ const documentSchema = new mongoose.Schema({
         type: Boolean,
         default: false  // Documents are private by default
     },
+    derivedTitle: {
+        type: String,
+        required: false  // Extracted from PDF, optional for non-PDF files
+    },
+    derivedDescription: {
+        type: String,
+        required: false  // Extracted from PDF content
+    },
+    userEdited: {
+        type: Boolean,
+        default: false  // True if user manually edited derived content
+    },
     uploadDate: {
         type: Date,
         default: Date.now

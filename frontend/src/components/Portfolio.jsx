@@ -325,8 +325,15 @@ export default function Portfolio() {
                                                                 <h3 className="text-base font-medium text-text-primary mb-2" style={{
                                                                     fontFamily: 'Outfit, sans-serif'
                                                                 }}>
-                                                                    {doc.originalName}
+                                                                    {doc.derivedTitle || doc.originalName}
                                                                 </h3>
+                                                                {doc.derivedDescription && (
+                                                                    <p className="text-xs text-text-muted mb-2 line-clamp-2" style={{
+                                                                        fontFamily: 'JetBrains Mono, monospace'
+                                                                    }}>
+                                                                        {doc.derivedDescription}
+                                                                    </p>
+                                                                )}
                                                                 <p className="text-sm text-text-muted mb-1" style={{
                                                                     fontFamily: 'JetBrains Mono, monospace'
                                                                 }}>

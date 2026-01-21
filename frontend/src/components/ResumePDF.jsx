@@ -1,11 +1,11 @@
 import { forwardRef } from 'react'
 
 const ResumePDF = forwardRef(({ user, documents }, ref) => {
-    // Filter documents by category
+    // Filter documents by category AND isPublic status
     const academics = documents.filter(doc => doc.category === 'Academics')
-    const internships = documents.filter(doc => doc.category === 'Internships')
-    const projects = documents.filter(doc => doc.category === 'Projects')
-    const certifications = documents.filter(doc => doc.category === 'Certifications')
+    const internships = documents.filter(doc => doc.category === 'Internships' && doc.isPublic)
+    const projects = documents.filter(doc => doc.category === 'Projects' && doc.isPublic)
+    const certifications = documents.filter(doc => doc.category === 'Certifications' && doc.isPublic)
 
     const formatDate = (dateString) => {
         const date = new Date(dateString)
@@ -213,7 +213,7 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                                     color: '#1F2937',
                                     margin: '0'
                                 }}>
-                                    {doc.originalName.replace(/\.[^/.]+$/, '')}
+                                    {doc.derivedTitle || doc.originalName.replace(/\.[^/.]+$/, '')}
                                 </h3>
                                 <span style={{
                                     fontSize: '10pt',
@@ -223,9 +223,21 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                                     {formatDate(doc.uploadDate)}
                                 </span>
                             </div>
-                            <p style={{ margin: '4px 0 0 0', fontSize: '10pt', color: '#6B7280', fontStyle: 'italic' }}>
-                                Details available in verified portfolio
-                            </p>
+                            {doc.derivedDescription ? (
+                                <p style={{
+                                    margin: '6px 0 0 0',
+                                    fontSize: '10pt',
+                                    color: '#4B5563',
+                                    lineHeight: '1.6',
+                                    fontFamily: 'Inter, sans-serif'
+                                }}>
+                                    {doc.derivedDescription}
+                                </p>
+                            ) : (
+                                <p style={{ margin: '4px 0 0 0', fontSize: '10pt', color: '#6B7280', fontStyle: 'italic' }}>
+                                    Details available in verified portfolio
+                                </p>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -290,7 +302,7 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                                     color: '#1F2937',
                                     margin: '0'
                                 }}>
-                                    {doc.originalName.replace(/\.[^/.]+$/, '')}
+                                    {doc.derivedTitle || doc.originalName.replace(/\.[^/.]+$/, '')}
                                 </h3>
                                 <span style={{
                                     fontSize: '10pt',
@@ -303,14 +315,15 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                             <p style={{
                                 margin: '4px 0 0 0',
                                 fontSize: '10pt',
-                                color: '#6B7280',
+                                color: doc.derivedDescription ? '#4B5563' : '#6B7280',
                                 lineHeight: '1.4',
                                 display: '-webkit-box',
                                 WebkitLineClamp: 2,
                                 WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
+                                overflow: 'hidden',
+                                fontFamily: doc.derivedDescription ? 'Inter, sans-serif' : 'inherit'
                             }}>
-                                Project documentation and details available in verified digital portfolio.
+                                {doc.derivedDescription || 'Project documentation and details available in verified digital portfolio.'}
                             </p>
                         </div>
                     ))}

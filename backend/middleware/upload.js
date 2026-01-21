@@ -1,20 +1,8 @@
 const multer = require('multer');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('../config/cloudinary');
 
-// Configure Cloudinary Storage
-// Using 'private' delivery type - documents require signed URLs to access
-// NOTE: 'authenticated' requires token-based auth (paid feature)
-// 'private' works with signed URLs using API secret (standard feature)
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'eduvault_docs',
-        type: 'private',  // Private delivery - requires signed URL to access
-        resource_type: 'auto',  // Automatically detect file type
-        allowed_formats: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'txt', 'zip']
-    }
-});
+// Use memory storage to get file buffer for PDF parsing
+// Files will be manually uploaded to Cloudinary after extraction
+const storage = multer.memoryStorage();
 
 // File filter for validation
 const fileFilter = (req, file, cb) => {
@@ -37,7 +25,7 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Configure multer with Cloudinary storage
+// Configure multer with memory storage
 const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
