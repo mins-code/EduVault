@@ -52,8 +52,27 @@ export default function Portfolio() {
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
     }
 
-    const handleViewDocument = (doc) => {
-        window.open(`http://localhost:5000${doc.fileUrl}`, '_blank')
+    const handleViewDocument = async (doc) => {
+        try {
+            console.log('🔒 Requesting guest pass for:', doc.originalName)
+
+            if (doc.hasCloudStorage) {
+                // Get signed guest pass URL (10-minute expiry)
+                const response = await api.get(`/api/portfolio/${username}/document/${doc._id}`)
+
+                if (response.data.success) {
+                    console.log('✅ Guest pass generated (expires in 10 min)')
+                    window.open(response.data.guestPassUrl, '_blank')
+                } else {
+                    alert('Failed to generate secure document link')
+                }
+            } else {
+                alert('⚠️ This document needs to be re-uploaded for secure viewing')
+            }
+        } catch (error) {
+            console.error('❌ View error:', error)
+            alert('Failed to open document. Please try again.')
+        }
     }
 
     const handleDownloadPortfolio = useReactToPrint({

@@ -11,6 +11,7 @@ export default function TheVault() {
     const [showToast, setShowToast] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('All')
+    const [deletingId, setDeletingId] = useState(null)
     const menuRef = useRef(null)
 
     const categories = ['All', 'Academics', 'Internships', 'Projects', 'Certifications', 'Extracurriculars']
@@ -95,28 +96,98 @@ export default function TheVault() {
         return colors[cat] || colors['Academics']
     }
 
-    const handleViewDocument = (doc) => {
-        window.open(`http://localhost:5000${doc.fileUrl}`, '_blank')
+    const handleViewDocument = async (doc) => {
+        try {
+            // Check if document has Cloudinary URL (new uploads)
+            if (doc.cloudinaryPublicId) {
+                console.log('🔒 Fetching signed URL for:', doc.originalName)
+                const response = await api.get(`/api/documents/view/${doc._id}`)
+                if (response.data.success) {
+                    console.log('✅ Opening signed URL (expires in 10 min)')
+                    window.open(response.data.signedUrl, '_blank')
+                } else {
+                    alert('Failed to generate secure link')
+                }
+            } else {
+                // Fallback for old documents without Cloudinary
+                console.log('⚠️  Legacy document - using local URL')
+                if (doc.fileUrl) {
+                    window.open(`http://localhost:5000${doc.fileUrl}`, '_blank')
+                } else {
+                    alert('⚠️  This document needs to be re-uploaded for secure cloud access')
+                }
+            }
+        } catch (error) {
+            console.error('❌ View error:', error)
+            alert('Failed to open document. Please try again.')
+        }
     }
 
-    const handleDownload = (doc) => {
-        const link = document.createElement('a')
-        link.href = `http://localhost:5000${doc.fileUrl}`
-        link.download = doc.originalName
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        setOpenMenuId(null)
+    const handleDownload = async (doc) => {
+        try {
+            setOpenMenuId(null)
+            console.log('📥 Downloading:', doc.originalName)
+
+            if (doc.cloudinaryPublicId) {
+                // Get signed download URL (with attachment flag)
+                const response = await api.get(`/api/documents/download/${doc._id}`)
+                if (response.data.success) {
+                    // Open download URL - browser will handle the download
+                    window.open(response.data.downloadUrl, '_blank')
+                    console.log('✅ Download initiated')
+                }
+            } else {
+                // Fallback for legacy documents
+                alert('⚠️ This document needs to be re-uploaded for secure download')
+            }
+        } catch (error) {
+            console.error('❌ Download error:', error)
+            alert('Failed to download document')
+        }
     }
 
-    const handleShare = (doc) => {
-        const fileUrl = `http://localhost:5000${doc.fileUrl}`
-        navigator.clipboard.writeText(fileUrl)
+    const handleShare = async (doc) => {
         setOpenMenuId(null)
 
-        // Show toast
-        setShowToast(true)
-        setTimeout(() => setShowToast(false), 3000)
+        try {
+            console.log('🔗 Generating share link for:', doc.originalName)
+
+            if (doc.cloudinaryPublicId) {
+                // Get signed share URL (10-minute expiry)
+                const response = await api.get(`/api/documents/share/${doc._id}`)
+
+                if (response.data.success) {
+                    const shareUrl = response.data.shareUrl
+                    const shareData = {
+                        title: doc.originalName,
+                        text: `View document: ${doc.originalName} (Link expires in 10 minutes)`,
+                        url: shareUrl
+                    }
+
+                    // Try Web Share API first
+                    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                        await navigator.share(shareData)
+                        console.log('✅ Shared via Web Share API')
+                    } else {
+                        // Fallback to clipboard copy
+                        await navigator.clipboard.writeText(shareUrl)
+                        setShowToast(true)
+                        setTimeout(() => setShowToast(false), 3000)
+                        console.log('✅ Link copied to clipboard')
+                    }
+                }
+            } else {
+                alert('⚠️ This document needs to be re-uploaded for secure sharing')
+            }
+        } catch (error) {
+            console.error('❌ Share error:', error)
+            // If Web Share failed but we have the URL, try clipboard as fallback
+            if (error.name === 'AbortError') {
+                console.log('User cancelled share')
+            } else {
+                alert('Failed to share document')
+            }
+        }
     }
 
     const handleDelete = async (doc) => {
@@ -127,13 +198,20 @@ export default function TheVault() {
         }
 
         try {
+            console.log('🗑️  Deleting document:', doc.originalName)
+            setDeletingId(doc._id)
+
             const response = await api.delete(`/api/documents/${doc._id}`)
+
             if (response.data.success) {
+                console.log('✅ Document deleted successfully')
                 fetchDocuments(userId)
             }
         } catch (error) {
-            console.error('Delete error:', error)
-            alert('Failed to delete document')
+            console.error('❌ Delete error:', error)
+            alert(error.response?.data?.message || 'Failed to delete document')
+        } finally {
+            setDeletingId(null)
         }
     }
 
@@ -271,19 +349,35 @@ export default function TheVault() {
                                                         style={{
                                                             background: 'linear-gradient(145deg, #0F172A, #020617)',
                                                             borderColor: 'rgba(148, 163, 184, 0.08)',
-                                                            animation: `fadeInUp 0.4s ease-out ${index * 0.05}s both`
+                                                            animation: `fadeInUp 0.4s ease-out ${index * 0.05}s both`,
+                                                            opacity: deletingId === doc._id ? 0.5 : 1,
+                                                            pointerEvents: deletingId === doc._id ? 'none' : 'auto'
                                                         }}
                                                         onMouseEnter={(e) => {
-                                                            e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.35)'
-                                                            e.currentTarget.style.boxShadow = '0 4px 24px rgba(56, 189, 248, 0.2)'
-                                                            e.currentTarget.style.transform = 'translateY(-4px)'
+                                                            if (deletingId !== doc._id) {
+                                                                e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.35)'
+                                                                e.currentTarget.style.boxShadow = '0 4px 24px rgba(56, 189, 248, 0.2)'
+                                                                e.currentTarget.style.transform = 'translateY(-4px)'
+                                                            }
                                                         }}
                                                         onMouseLeave={(e) => {
-                                                            e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.08)'
-                                                            e.currentTarget.style.boxShadow = 'none'
-                                                            e.currentTarget.style.transform = 'translateY(0)'
+                                                            if (deletingId !== doc._id) {
+                                                                e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.08)'
+                                                                e.currentTarget.style.boxShadow = 'none'
+                                                                e.currentTarget.style.transform = 'translateY(0)'
+                                                            }
                                                         }}
                                                     >
+                                                        {/* Deleting Overlay */}
+                                                        {deletingId === doc._id && (
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-bg-top/80 rounded-vault-lg z-10">
+                                                                <div className="text-center">
+                                                                    <div className="w-12 h-12 border-4 border-accent-teal border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                                                                    <p className="text-sm text-accent-teal font-medium">Deleting from cloud...</p>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
                                                         {/* Header with Icon and More Menu */}
                                                         <div className="flex items-start justify-between mb-5">
                                                             <div className="w-14 h-14 rounded-vault bg-accent-cyan/10 flex items-center justify-center">
