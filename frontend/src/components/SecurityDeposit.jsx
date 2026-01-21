@@ -121,16 +121,17 @@ export default function SecurityDeposit() {
 
                 console.log('📤 Upload response:', doc)
 
-                // If PDF and has extracted data, show review modal
-                if (isPDF && (doc.derivedTitle || doc.derivedDescription || doc.suggestedCategory)) {
-                    console.log('📄 PDF extracted data received:', {
+                // If PDF, ALWAYS show review modal so user can add/edit details
+                if (isPDF) {
+                    console.log('📄 PDF uploaded, showing review modal with data:', {
                         title: doc.derivedTitle,
                         description: doc.derivedDescription,
                         category: doc.suggestedCategory
                     })
 
-                    // Show review modal with extracted data
+                    // Show review modal with extracted data or defaults
                     setExtractedData(doc)
+                    // Use derived title, or filename without extension
                     setReviewTitle(doc.derivedTitle || doc.fileName.replace(/\.[^/.]+$/, ''))
                     setReviewDescription(doc.derivedDescription || '')
                     setReviewCategory(doc.suggestedCategory || category)
@@ -138,8 +139,8 @@ export default function SecurityDeposit() {
                     setShowReviewModal(true)
                     setUploading(false)
                 } else {
-                    // Not a PDF or no extracted data, go directly to vault
-                    console.log('✅ Upload complete, redirecting to vault')
+                    // Not a PDF, go directly to vault
+                    console.log('✅ Upload complete (non-PDF), redirecting to vault')
                     setUploadSuccess(true)
                     setTimeout(() => {
                         navigate('/vault')

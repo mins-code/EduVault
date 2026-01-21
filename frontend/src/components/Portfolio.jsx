@@ -395,6 +395,14 @@ export default function Portfolio() {
                                                         {formatDate(doc.uploadDate)}
                                                     </p>
 
+                                                    {doc.derivedDescription && (
+                                                        <p className="text-sm text-text-secondary mb-3 line-clamp-3" style={{
+                                                            fontFamily: 'JetBrains Mono, monospace'
+                                                        }}>
+                                                            {doc.derivedDescription}
+                                                        </p>
+                                                    )}
+
                                                     <div className="mt-auto space-y-2">
                                                         {/* Live Preview Button */}
                                                         <button
@@ -467,12 +475,20 @@ export default function Portfolio() {
                                                     <Award className="w-8 h-8 text-yellow-400" strokeWidth={2} />
                                                 </div>
 
-                                                <h3 className="text-lg font-medium text-text-primary mb-4 line-clamp-2" style={{
+                                                <h3 className="text-lg font-medium text-text-primary mb-2 line-clamp-2" style={{
                                                     fontFamily: 'Outfit, sans-serif',
                                                     minHeight: '3.5rem'
                                                 }}>
-                                                    {doc.originalName}
+                                                    {doc.derivedTitle || doc.originalName}
                                                 </h3>
+
+                                                {doc.derivedDescription && (
+                                                    <p className="text-sm text-text-muted mb-3 line-clamp-3" style={{
+                                                        fontFamily: 'JetBrains Mono, monospace'
+                                                    }}>
+                                                        {doc.derivedDescription}
+                                                    </p>
+                                                )}
 
                                                 <div className="space-y-2">
                                                     <p className="text-sm text-text-secondary" style={{

@@ -50,6 +50,10 @@ const documentSchema = new mongoose.Schema({
         type: String,
         required: false  // Extracted from PDF content
     },
+    extractedText: {
+        type: String,
+        required: false // Store raw text for search
+    },
     userEdited: {
         type: Boolean,
         default: false  // True if user manually edited derived content

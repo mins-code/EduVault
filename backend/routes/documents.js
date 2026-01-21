@@ -3,97 +3,11 @@ const Document = require('../models/Document');
 const upload = require('../middleware/upload');
 const cloudinary = require('../config/cloudinary');
 const pdfParse = require('pdf-parse');
-const streamifier = require('streamifier');
+// streamifier removed
 const axios = require('axios');
+const { extractPDFContent } = require('../utils/pdfExtractor');
 
 const router = express.Router();
-
-// Helper function to determine category based on text content
-const determineCategory = (text) => {
-    const lowerText = text.toLowerCase();
-
-    // Rule-based categorization
-    if (lowerText.includes('project') && lowerText.includes('implementation')) {
-        return 'Project';
-    }
-    if (lowerText.includes('internship') && lowerText.includes('company')) {
-        return 'Internship';
-    }
-    if (lowerText.includes('certificate') && lowerText.includes('awarded')) {
-        return 'Certification';
-    }
-
-    // Default - return null to use user-provided category
-    return null;
-};
-
-// Helper function to extract title (first non-empty line)
-const extractTitle = (text) => {
-    const lines = text.split('\n');
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.length > 0) {
-            // Limit title length to 100 characters
-            return trimmed.substring(0, 100);
-        }
-    }
-    return null;
-};
-
-// Helper function to extract description (first 3 meaningful sentences)
-const extractDescription = (text) => {
-    if (!text || text.trim().length === 0) {
-        console.log('⚠️ extractDescription: Empty text provided');
-        return null;
-    }
-
-    // Clean up the text - normalize whitespace but preserve line breaks initially
-    let cleanText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-    console.log('🔍 extractDescription: Processing text of length', cleanText.length);
-
-    // Try Method 1: Extract by sentences with punctuation
-    const sentenceRegex = /[^.!?]+[.!?]+/g;
-    const sentences = cleanText.match(sentenceRegex) || [];
-
-    if (sentences.length > 0) {
-        const meaningfulSentences = sentences
-            .map(s => s.trim())
-            .filter(s => s.length >= 10)
-            .slice(0, 3);
-
-        if (meaningfulSentences.length > 0) {
-            const result = meaningfulSentences.join(' ').substring(0, 500);
-            console.log('✅ extractDescription: Found via sentences, length:', result.length);
-            return result;
-        }
-    }
-
-    // Try Method 2: Extract by lines (for PDFs without proper punctuation)
-    const lines = cleanText
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length >= 15); // At least 15 chars per line
-
-    if (lines.length > 0) {
-        // Skip the first line (likely title) and take next 3-5 lines
-        const descLines = lines.slice(1, 6).join(' ').substring(0, 500);
-        if (descLines.length >= 20) {
-            console.log('✅ extractDescription: Found via lines, length:', descLines.length);
-            return descLines;
-        }
-    }
-
-    // Try Method 3: Just take first 300 characters after removing excess whitespace
-    const fallback = cleanText.replace(/\s+/g, ' ').trim().substring(0, 300);
-    if (fallback.length >= 20) {
-        console.log('✅ extractDescription: Using fallback, length:', fallback.length);
-        return fallback;
-    }
-
-    console.log('⚠️ extractDescription: Could not extract meaningful description');
-    return null;
-};
 
 // Helper function to upload buffer to Cloudinary using upload_stream
 const uploadToCloudinary = (buffer, originalName) => {
@@ -114,8 +28,8 @@ const uploadToCloudinary = (buffer, originalName) => {
             }
         );
 
-        // Pipe the buffer to the upload stream
-        streamifier.createReadStream(buffer).pipe(uploadStream);
+        // Pipe the buffer directly to the upload stream
+        uploadStream.end(buffer);
     });
 };
 
@@ -159,7 +73,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         let extractedData = {
             derivedTitle: null,
             derivedDescription: null,
-            suggestedCategory: null
+            suggestedCategory: null,
+            extractedText: null // New field
         };
 
         const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
@@ -172,31 +87,29 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         });
 
         if (isPDF && req.file.buffer) {
-            console.log('📄 PDF detected - extracting content from buffer...');
+            console.log('📄 PDF detected - extracting content via utility...');
             try {
-                const pdfData = await pdfParse(req.file.buffer);
-                const extractedText = pdfData.text || '';
+                // Use the robust utility function
+                const extractionResult = await extractPDFContent(req.file.buffer);
 
-                console.log('📝 PDF text extracted, length:', extractedText.length);
-                console.log('📝 First 500 chars:', extractedText.substring(0, 500));
+                // Map the utility result to our data structure
+                extractedData.derivedTitle = extractionResult.derivedTitle;
+                extractedData.derivedDescription = extractionResult.derivedDescription;
+                extractedData.suggestedCategory = extractionResult.suggestedCategory;
+                extractedData.extractedText = extractionResult.extractedText;
 
-                // Rule-based categorization
-                extractedData.suggestedCategory = determineCategory(extractedText);
-                console.log('🏷️  Suggested category:', extractedData.suggestedCategory || 'None (using user-provided)');
-
-                // Extract title (first non-empty line)
-                extractedData.derivedTitle = extractTitle(extractedText);
-                console.log('📌 Derived title:', extractedData.derivedTitle);
-
-                // Extract description (first 3 meaningful sentences)
-                extractedData.derivedDescription = extractDescription(extractedText);
-                console.log('📋 Derived description length:', extractedData.derivedDescription?.length || 0);
-                console.log('📋 Derived description:', extractedData.derivedDescription);
-
+                console.log('✅ Extraction Result:', {
+                    title: extractedData.derivedTitle,
+                    category: extractedData.suggestedCategory,
+                    descLength: extractedData.derivedDescription?.length
+                });
             } catch (pdfError) {
-                console.error('⚠️ PDF extraction error (continuing with upload):', pdfError.message);
-                console.error('⚠️ PDF extraction stack:', pdfError.stack);
-                // Use filename as fallback title
+                console.error('⚠️ Extraction failed:', pdfError);
+            }
+
+            // strict fallback: ensure derivedTitle is never null if we have a file
+            if (!extractedData.derivedTitle && req.file && req.file.originalname) {
+                console.log('⚠️ Title extraction returned null, using filename fallback');
                 extractedData.derivedTitle = req.file.originalname.replace(/\.[^/.]+$/, '');
             }
         } else {
@@ -234,8 +147,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             fileSize: req.file.size,
             category: finalCategory,
             tags: parsedTags,
+            tags: parsedTags,
             derivedTitle: extractedData.derivedTitle,
-            derivedDescription: extractedData.derivedDescription
+            derivedDescription: extractedData.derivedDescription,
+            extractedText: extractedData.extractedText
         });
 
         console.log('💾 Saving document to MongoDB...');
