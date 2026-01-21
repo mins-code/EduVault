@@ -308,6 +308,58 @@ router.get('/share/:id', async (req, res) => {
     }
 });
 
+// @route   PATCH /api/documents/:id/visibility
+// @desc    Toggle document visibility on public portfolio
+// @access  Private
+router.patch('/:id/visibility', async (req, res) => {
+    try {
+        const { isPublic } = req.body;
+        console.log(`🔄 Visibility toggle request for document: ${req.params.id}, isPublic: ${isPublic}`);
+
+        // Validate isPublic is a boolean
+        if (typeof isPublic !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: 'isPublic must be a boolean value'
+            });
+        }
+
+        // Find document
+        const document = await Document.findById(req.params.id);
+
+        if (!document) {
+            return res.status(404).json({
+                success: false,
+                message: 'Document not found'
+            });
+        }
+
+        // Update visibility
+        document.isPublic = isPublic;
+        await document.save();
+
+        console.log(`✅ Document visibility updated: ${document.originalName} is now ${isPublic ? 'PUBLIC' : 'PRIVATE'}`);
+
+        res.json({
+            success: true,
+            message: `Document is now ${isPublic ? 'visible' : 'hidden'} on your portfolio`,
+            document: {
+                id: document._id,
+                originalName: document.originalName,
+                isPublic: document.isPublic
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Visibility toggle error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating document visibility',
+            error: error.message
+        });
+    }
+});
+
 // @route   GET /api/documents/user/:userId
 // @desc    Get all documents for a user
 // @access  Private

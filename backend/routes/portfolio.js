@@ -30,9 +30,13 @@ router.get('/:username', async (req, res) => {
             });
         }
 
-        // Fetch all documents for this user
-        const documents = await Document.find({ userId: user._id })
-            .sort({ uploadDate: -1 });
+        // Fetch only PUBLIC documents for this user's portfolio
+        const documents = await Document.find({
+            userId: user._id,
+            isPublic: true  // Only show documents marked as public
+        }).sort({ uploadDate: -1 });
+
+        console.log(`📊 Portfolio for ${username}: ${documents.length} public documents`);
 
         // Return user profile and documents (without direct URLs for security)
         res.status(200).json({
@@ -52,7 +56,8 @@ router.get('/:username', async (req, res) => {
                 category: doc.category,
                 fileSize: doc.fileSize,
                 uploadDate: doc.uploadDate,
-                hasCloudStorage: !!doc.cloudinaryPublicId
+                hasCloudStorage: !!doc.cloudinaryPublicId,
+                isPublic: doc.isPublic
             }))
         });
 

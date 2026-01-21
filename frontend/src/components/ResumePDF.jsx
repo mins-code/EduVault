@@ -15,8 +15,8 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
         })
     }
 
-    // Portfolio link
-    const portfolioLink = `https://eduvault.app/portfolio/${user.username}`
+    // Portfolio link - use localhost for development
+    const portfolioLink = `http://localhost:5173/portfolio/${user.username}`
 
     return (
         <div ref={ref} style={{
@@ -49,17 +49,36 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                     display: 'flex',
                     justifyContent: 'center',
                     gap: '12px',
-                    flexWrap: 'wrap'
+                    flexWrap: 'wrap',
+                    alignItems: 'center'
                 }}>
                     <span>{user.email}</span>
                     <span>•</span>
                     <a href={portfolioLink} style={{
                         color: '#0D9488',
                         textDecoration: 'none',
-                        fontWeight: 500
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
                     }}>
-                        View Verified Portfolio →
+                        🔗 View Verified Portfolio →
                     </a>
+                </div>
+
+                {/* Verification Badge */}
+                <div style={{
+                    marginTop: '12px',
+                    padding: '6px 12px',
+                    backgroundColor: '#F0FDFA',
+                    border: '1px solid #0D9488',
+                    borderRadius: '6px',
+                    display: 'inline-block',
+                    fontSize: '9pt',
+                    color: '#0F766E',
+                    fontWeight: 500
+                }}>
+                    🛡️ Securely Verified by EduVault
                 </div>
             </div>
 

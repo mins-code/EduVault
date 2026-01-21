@@ -38,6 +38,10 @@ const documentSchema = new mongoose.Schema({
     tags: [{
         type: String
     }],
+    isPublic: {
+        type: Boolean,
+        default: false  // Documents are private by default
+    },
     uploadDate: {
         type: Date,
         default: Date.now

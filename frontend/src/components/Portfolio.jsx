@@ -75,6 +75,75 @@ export default function Portfolio() {
         }
     }
 
+    const handleDownloadDocument = async (doc) => {
+        try {
+            console.log('📥 Requesting download guest pass for:', doc.originalName)
+
+            if (doc.hasCloudStorage) {
+                // Get signed guest pass URL with attachment mode
+                const response = await api.get(`/api/portfolio/${username}/document/${doc._id}`)
+
+                if (response.data.success) {
+                    // Create a temporary link with download attribute
+                    const link = document.createElement('a')
+                    link.href = response.data.guestPassUrl
+                    link.download = doc.originalName
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                    console.log('✅ Download initiated')
+                } else {
+                    alert('Failed to generate download link')
+                }
+            } else {
+                alert('⚠️ This document needs to be re-uploaded for secure download')
+            }
+        } catch (error) {
+            console.error('❌ Download error:', error)
+            alert('Failed to download document. Please try again.')
+        }
+    }
+
+    const handleShareDocument = async (doc) => {
+        try {
+            console.log('🔗 Generating share link for:', doc.originalName)
+
+            if (doc.hasCloudStorage) {
+                // Get signed guest pass URL
+                const response = await api.get(`/api/portfolio/${username}/document/${doc._id}`)
+
+                if (response.data.success) {
+                    const shareUrl = response.data.guestPassUrl
+                    const shareData = {
+                        title: doc.originalName,
+                        text: `View document: ${doc.originalName} from ${portfolioData?.user?.name}'s portfolio (Link expires in 10 minutes)`,
+                        url: shareUrl
+                    }
+
+                    // Try Web Share API first
+                    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                        await navigator.share(shareData)
+                        console.log('✅ Shared via Web Share API')
+                    } else {
+                        // Fallback to clipboard copy
+                        await navigator.clipboard.writeText(shareUrl)
+                        alert('✅ Link copied to clipboard! (Expires in 10 minutes)')
+                        console.log('✅ Link copied to clipboard')
+                    }
+                } else {
+                    alert('Failed to generate share link')
+                }
+            } else {
+                alert('⚠️ This document needs to be re-uploaded for secure sharing')
+            }
+        } catch (error) {
+            console.error('❌ Share error:', error)
+            if (error.name !== 'AbortError') {
+                alert('Failed to share document. Please try again.')
+            }
+        }
+    }
+
     const handleDownloadPortfolio = useReactToPrint({
         contentRef: resumeRef,
         documentTitle: `${portfolioData?.user?.username || 'Portfolio'}_Portfolio`,
@@ -319,7 +388,8 @@ export default function Portfolio() {
                                                         {formatDate(doc.uploadDate)}
                                                     </p>
 
-                                                    <div className="mt-auto">
+                                                    <div className="mt-auto space-y-2">
+                                                        {/* Live Preview Button */}
                                                         <button
                                                             onClick={() => handleViewDocument(doc)}
                                                             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-vault bg-violet-600/10 border border-violet-500/30 text-violet-400 hover:bg-violet-600/20 transition-all duration-vault"
@@ -327,6 +397,24 @@ export default function Portfolio() {
                                                             <ExternalLink className="w-4 h-4" />
                                                             <span className="text-sm font-medium">Live Preview</span>
                                                         </button>
+
+                                                        {/* Download & Share Buttons */}
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <button
+                                                                onClick={() => handleDownloadDocument(doc)}
+                                                                className="flex items-center justify-center gap-2 px-3 py-2 rounded-vault bg-cyan-600/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-600/20 transition-all duration-vault"
+                                                            >
+                                                                <Download className="w-4 h-4" />
+                                                                <span className="text-xs font-medium">Download</span>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleShareDocument(doc)}
+                                                                className="flex items-center justify-center gap-2 px-3 py-2 rounded-vault bg-emerald-600/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/20 transition-all duration-vault"
+                                                            >
+                                                                <ExternalLink className="w-4 h-4" />
+                                                                <span className="text-xs font-medium">Share</span>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

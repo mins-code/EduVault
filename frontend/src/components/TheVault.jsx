@@ -9,6 +9,7 @@ export default function TheVault() {
     const [userId, setUserId] = useState(null)
     const [openMenuId, setOpenMenuId] = useState(null)
     const [showToast, setShowToast] = useState(false)
+    const [toastMessage, setToastMessage] = useState('')
     const [searchTerm, setSearchTerm] = useState('')
     const [selectedCategory, setSelectedCategory] = useState('All')
     const [deletingId, setDeletingId] = useState(null)
@@ -212,6 +213,36 @@ export default function TheVault() {
             alert(error.response?.data?.message || 'Failed to delete document')
         } finally {
             setDeletingId(null)
+        }
+    }
+
+    const handleToggleVisibility = async (doc) => {
+        try {
+            const newVisibility = !doc.isPublic
+            console.log(`🔄 Toggling visibility for: ${doc.originalName} to ${newVisibility ? 'PUBLIC' : 'PRIVATE'}`)
+
+            const response = await api.patch(`/api/documents/${doc._id}/visibility`, {
+                isPublic: newVisibility
+            })
+
+            if (response.data.success) {
+                console.log('✅ Visibility updated')
+
+                // Update local state
+                setDocuments(prevDocs =>
+                    prevDocs.map(d =>
+                        d._id === doc._id ? { ...d, isPublic: newVisibility } : d
+                    )
+                )
+
+                // Show toast
+                setToastMessage(newVisibility ? '✅ Now visible on portfolio' : '🔒 Hidden from portfolio')
+                setShowToast(true)
+                setTimeout(() => setShowToast(false), 3000)
+            }
+        } catch (error) {
+            console.error('❌ Visibility toggle error:', error)
+            alert('Failed to update visibility')
         }
     }
 
@@ -472,10 +503,36 @@ export default function TheVault() {
                                                         </h5>
 
                                                         {/* Category Badge */}
-                                                        <div className="mb-5">
+                                                        <div className="mb-3">
                                                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getCategoryColor(doc.category)}`}>
                                                                 {doc.category}
                                                             </span>
+                                                        </div>
+
+                                                        {/* Portfolio Visibility Toggle */}
+                                                        <div className="mb-4 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-xs font-medium text-text-muted" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                                                        Show on Portfolio
+                                                                    </span>
+                                                                    {doc.isPublic && (
+                                                                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-teal-500/10 border border-teal-500/30 text-teal-400" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                                                            PUBLIC
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleToggleVisibility(doc)}
+                                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${doc.isPublic ? 'bg-teal-500' : 'bg-slate-600'
+                                                                        }`}
+                                                                >
+                                                                    <span
+                                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${doc.isPublic ? 'translate-x-6' : 'translate-x-1'
+                                                                            }`}
+                                                                    />
+                                                                </button>
+                                                            </div>
                                                         </div>
 
                                                         {/* Metadata - Size & Date */}
@@ -520,7 +577,7 @@ export default function TheVault() {
                         >
                             <div className="flex items-center gap-3">
                                 <Share2 className="w-5 h-5" />
-                                <span className="font-medium">Link Copied!</span>
+                                <span className="font-medium">{toastMessage || 'Link Copied!'}</span>
                             </div>
                         </div>
                     )}
