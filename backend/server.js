@@ -30,11 +30,13 @@ mongoose
 const authRoutes = require('./routes/auth');
 const documentRoutes = require('./routes/documents');
 const portfolioRoutes = require('./routes/portfolio');
+const applicationRoutes = require('./routes/applications');
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // Test route
 app.get('/', (req, res) => {

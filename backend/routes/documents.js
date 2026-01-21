@@ -1,9 +1,9 @@
 const express = require('express');
+const fs = require('fs');
 const Document = require('../models/Document');
 const upload = require('../middleware/upload');
 const cloudinary = require('../config/cloudinary');
 const pdfParse = require('pdf-parse');
-// streamifier removed
 const axios = require('axios');
 const { extractPDFContent } = require('../utils/pdfExtractor');
 
@@ -34,9 +34,11 @@ const uploadToCloudinary = (buffer, originalName) => {
 };
 
 // @route   POST /api/documents/upload
-// @desc    Upload a document to Cloudinary with PDF content extraction
+// @desc    Upload a document to Cloudinary with PDF content extraction (Disk-First)
 // @access  Private (requires authentication)
 router.post('/upload', upload.single('file'), async (req, res) => {
+    let localFilePath = null;
+
     try {
         console.log('📤 Upload request received');
 
@@ -49,11 +51,14 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             });
         }
 
-        console.log('📁 File received:', {
+        // With diskStorage, req.file.path contains the local file path
+        localFilePath = req.file.path;
+
+        console.log('📁 File received (disk-first):', {
             originalname: req.file.originalname,
             size: req.file.size,
             mimetype: req.file.mimetype,
-            bufferLength: req.file.buffer?.length
+            path: localFilePath
         });
 
         const { category, tags, userId } = req.body;
@@ -74,7 +79,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             derivedTitle: null,
             derivedDescription: null,
             suggestedCategory: null,
-            extractedText: null // New field
+            extractedText: null
         };
 
         const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf');
@@ -82,15 +87,18 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         console.log('🔍 File check:', {
             originalname: req.file.originalname,
             isPDF: isPDF,
-            hasBuffer: !!req.file.buffer,
-            bufferLength: req.file.buffer?.length
+            localPath: localFilePath
         });
 
-        if (isPDF && req.file.buffer) {
-            console.log('📄 PDF detected - extracting content via utility...');
+        if (isPDF && localFilePath) {
+            console.log('📄 PDF detected - reading from disk and extracting content...');
             try {
+                // Read file from disk into buffer
+                const fileBuffer = fs.readFileSync(localFilePath);
+                console.log('📚 File buffer size:', fileBuffer.length);
+
                 // Use the robust utility function
-                const extractionResult = await extractPDFContent(req.file.buffer);
+                const extractionResult = await extractPDFContent(fileBuffer);
 
                 // Map the utility result to our data structure
                 extractedData.derivedTitle = extractionResult.derivedTitle;
@@ -113,14 +121,19 @@ router.post('/upload', upload.single('file'), async (req, res) => {
                 extractedData.derivedTitle = req.file.originalname.replace(/\.[^/.]+$/, '');
             }
         } else {
-            console.log('⚠️ Skipping PDF extraction:', { isPDF, hasBuffer: !!req.file.buffer });
+            console.log('⚠️ Skipping PDF extraction:', { isPDF, hasPath: !!localFilePath });
             // Non-PDF files: use filename as title
             extractedData.derivedTitle = req.file.originalname.replace(/\.[^/.]+$/, '');
         }
 
-        // Upload buffer to Cloudinary manually
-        console.log('☁️  Uploading to Cloudinary...');
-        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, req.file.originalname);
+        // Upload file to Cloudinary using file path (more stable than streaming)
+        console.log('☁️  Uploading to Cloudinary from disk...');
+        const cloudinaryResult = await cloudinary.uploader.upload(localFilePath, {
+            folder: 'eduvault_docs',
+            resource_type: 'auto',
+            type: 'private',
+            public_id: `${Date.now()}_${req.file.originalname.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9]/g, '_')}`
+        });
 
         console.log('✅ Cloudinary upload successful:', {
             public_id: cloudinaryResult.public_id,
@@ -146,7 +159,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             cloudinaryPublicId: cloudinaryResult.public_id,
             fileSize: req.file.size,
             category: finalCategory,
-            tags: parsedTags,
             tags: parsedTags,
             derivedTitle: extractedData.derivedTitle,
             derivedDescription: extractedData.derivedDescription,
@@ -188,6 +200,16 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             message: 'Error uploading document',
             error: error.message
         });
+    } finally {
+        // Cleanup: Delete local file after processing
+        if (localFilePath && fs.existsSync(localFilePath)) {
+            try {
+                fs.unlinkSync(localFilePath);
+                console.log('🗑️ Local file cleaned up:', localFilePath);
+            } catch (cleanupError) {
+                console.error('⚠️ Failed to cleanup local file:', cleanupError);
+            }
+        }
     }
 });
 

@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard'
 import SecurityDeposit from './components/SecurityDeposit'
 import TheVault from './components/TheVault'
 import Portfolio from './components/Portfolio'
+import ApplicationTracker from './components/ApplicationTracker'
 import api from './api'
 
 function App() {
@@ -69,6 +70,14 @@ function App() {
             path="/vault"
             element={
               isAuthenticated ? <TheVault /> : <Navigate to="/" replace />
+            }
+          />
+
+          {/* Application Tracker Route */}
+          <Route
+            path="/applications"
+            element={
+              isAuthenticated ? <ApplicationTracker /> : <Navigate to="/" replace />
             }
           />
 

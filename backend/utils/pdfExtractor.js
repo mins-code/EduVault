@@ -70,11 +70,23 @@ const extractDescription = (text) => {
  * Main function to extract content from PDF buffer
  */
 const extractPDFContent = async (buffer) => {
+    console.log('🔍 extractPDFContent called');
+    console.log('📦 Buffer type:', typeof buffer);
+    console.log('📦 Buffer length:', buffer?.length);
+
     try {
+        console.log('⏳ Calling pdf-parse...');
         const data = await pdfParse(buffer);
+
+        console.log('✅ pdf-parse returned successfully');
+        console.log('📄 Pages:', data.numpages);
+        console.log('📝 Text type:', typeof data.text);
+        console.log('📝 Text length:', data.text?.length);
+
         const text = data.text || '';
 
         console.log('📝 Raw PDF Text Length:', text.length);
+        console.log('📝 First 500 chars:', text.substring(0, 500));
 
         if (!text || text.trim().length === 0) {
             console.warn('⚠️ PDF has no selectable text (likely scanned).');
@@ -86,15 +98,24 @@ const extractPDFContent = async (buffer) => {
             };
         }
 
+        const title = extractTitle(text);
+        const description = extractDescription(text);
+        const category = detectCategory(text);
+
+        console.log('🏷️ Extracted title:', title);
+        console.log('📋 Extracted description length:', description?.length);
+        console.log('📁 Detected category:', category);
+
         return {
-            derivedTitle: extractTitle(text),
-            derivedDescription: extractDescription(text),
-            suggestedCategory: detectCategory(text),
+            derivedTitle: title,
+            derivedDescription: description,
+            suggestedCategory: category,
             extractedText: text
         };
 
     } catch (error) {
         console.error('❌ Error parsing PDF:', error.message);
+        console.error('❌ Error stack:', error.stack);
         return {
             derivedTitle: null,
             derivedDescription: null,

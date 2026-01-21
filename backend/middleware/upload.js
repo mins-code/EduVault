@@ -1,8 +1,23 @@
 const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 
-// Use memory storage to get file buffer for PDF parsing
-// Files will be manually uploaded to Cloudinary after extraction
-const storage = multer.memoryStorage();
+// Setup uploads directory
+const uploadsDir = path.join(__dirname, '../uploads');
+
+// Ensure uploads directory exists
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Use disk storage for reliable file handling
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadsDir),
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + '-' + file.originalname);
+    }
+});
 
 // File filter for validation
 const fileFilter = (req, file, cb) => {
@@ -25,7 +40,7 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Configure multer with memory storage
+// Configure multer with disk storage
 const upload = multer({
     storage: storage,
     fileFilter: fileFilter,

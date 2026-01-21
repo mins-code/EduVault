@@ -45,9 +45,11 @@ export default function Auth() {
                 })
 
                 if (response.data.success) {
-                    // Store token in localStorage
+                    // Store token and user data in localStorage
                     localStorage.setItem('token', response.data.token)
                     localStorage.setItem('user', JSON.stringify(response.data.user))
+                    // Store userId explicitly for easy access (backend returns 'id' not '_id')
+                    localStorage.setItem('userId', response.data.user.id)
 
                     setMessage({
                         type: 'success',
