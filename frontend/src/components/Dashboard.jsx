@@ -4,6 +4,7 @@ import { FileDown } from 'lucide-react'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import ResumePDF from './ResumePDF'
+import SkillManager from './SkillManager'
 import api from '../api'
 
 export default function Dashboard() {
@@ -145,6 +146,11 @@ export default function Dashboard() {
                                         Document categories
                                     </p>
                                 </div>
+                            </div>
+
+                            {/* Skills & Bio Section */}
+                            <div className="mt-8 mb-12">
+                                <SkillManager />
                             </div>
 
                             {/* Intelligence Hub */}

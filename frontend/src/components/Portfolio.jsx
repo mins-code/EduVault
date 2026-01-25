@@ -11,6 +11,7 @@ export default function Portfolio() {
     const [error, setError] = useState(null)
     const [portfolioData, setPortfolioData] = useState(null)
     const [isRecruiter, setIsRecruiter] = useState(false)
+    const [emailCopied, setEmailCopied] = useState(false)
     const resumeRef = useRef()
 
     useEffect(() => {
@@ -261,9 +262,38 @@ export default function Portfolio() {
                             <p className="text-xl text-text-secondary mb-3" style={{ fontFamily: 'Inter, sans-serif' }}>
                                 {user.degree} • {user.branch}
                             </p>
-                            <p className="text-lg text-text-muted mb-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+                            <p className="text-lg text-text-muted mb-6" style={{ fontFamily: 'Inter, sans-serif' }}>
                                 {user.university} • Class of {user.graduationYear}
                             </p>
+
+                            {/* Skills Section */}
+                            {user.skills && user.skills.length > 0 && (
+                                <div className="flex flex-wrap justify-center gap-3 mb-6">
+                                    {user.skills.map((skill, index) => (
+                                        <span
+                                            key={index}
+                                            className="px-3 py-1 rounded-full text-sm font-medium border"
+                                            style={{
+                                                background: 'rgba(6, 182, 212, 0.1)',
+                                                borderColor: 'rgba(6, 182, 212, 0.3)',
+                                                color: '#22d3ee',
+                                                boxShadow: '0 0 10px rgba(34, 211, 238, 0.1)'
+                                            }}
+                                        >
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Bio Section */}
+                            {user.bio && (
+                                <p className="text-text-secondary max-w-2xl mx-auto mb-8 leading-relaxed" style={{
+                                    fontFamily: 'Inter, sans-serif'
+                                }}>
+                                    {user.bio}
+                                </p>
+                            )}
 
                             <div className="flex items-center justify-center gap-8 mt-8">
                                 <div className="text-center">

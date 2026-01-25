@@ -1,327 +1,279 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, Filter, LogOut, Building2, Bookmark, Users, X } from 'lucide-react'
+import { Search, LogOut, Bookmark, GraduationCap, Building2, ExternalLink, Filter } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../api'
-import CandidateCard from './CandidateCard'
 
 export default function RecruiterDashboard() {
     const navigate = useNavigate()
-    const [recruiter, setRecruiter] = useState(null)
-    const [students, setStudents] = useState([])
-    const [bookmarkedIds, setBookmarkedIds] = useState([])
-    const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState('')
+
+    // State for Omnibar & Filters
+    const [skillSearch, setSkillSearch] = useState('')
     const [filters, setFilters] = useState({
         university: '',
         graduationYear: '',
         degree: '',
         branch: ''
     })
-    const [showBookmarks, setShowBookmarks] = useState(false)
 
-    useEffect(() => {
-        // Check authentication
-        const recruiterData = localStorage.getItem('recruiter')
-        if (!recruiterData) {
-            navigate('/recruiter/auth')
-            return
-        }
+    const [activeTab, setActiveTab] = useState('all') // 'all' or 'bookmarked'
+    const [candidates, setCandidates] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [stats, setStats] = useState({ total: 0, bookmarked: 0 })
 
-        setRecruiter(JSON.parse(recruiterData))
-        fetchStudents()
-        fetchBookmarks()
-    }, [navigate])
-
-    const fetchStudents = async () => {
+    // Fetch Candidates
+    const fetchCandidates = async () => {
         try {
             setLoading(true)
             const params = new URLSearchParams()
 
-            if (searchTerm) params.append('skill', searchTerm)
+            // Skill Search
+            if (skillSearch) params.append('skill', skillSearch)
+
+            // Filters
             if (filters.university) params.append('university', filters.university)
             if (filters.graduationYear) params.append('graduationYear', filters.graduationYear)
             if (filters.degree) params.append('degree', filters.degree)
             if (filters.branch) params.append('branch', filters.branch)
 
-            const response = await api.get(`/api/scout/search?${params.toString()}`)
-            setStudents(response.data.students || [])
+            const endpoint = activeTab === 'bookmarked'
+                ? '/api/scout/bookmarks'
+                : `/api/scout/search?${params.toString()}`
+
+            const response = await api.get(endpoint)
+
+            if (response.data.success) {
+                if (activeTab === 'bookmarked') {
+                    setCandidates(response.data.bookmarks)
+                } else {
+                    setCandidates(response.data.students)
+                }
+            }
         } catch (error) {
-            console.error('Search error:', error)
+            console.error('Fetch error:', error)
         } finally {
             setLoading(false)
         }
     }
 
-    const fetchBookmarks = async () => {
-        try {
-            const token = localStorage.getItem('recruiterToken')
-            const response = await api.get('/api/scout/bookmarks', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-
-            const ids = response.data.bookmarks.map(b => b._id)
-            setBookmarkedIds(ids)
-        } catch (error) {
-            console.error('Fetch bookmarks error:', error)
-        }
-    }
-
-    const handleSearch = () => {
-        fetchStudents()
-    }
-
-    const handleFilterChange = (key, value) => {
-        setFilters(prev => ({ ...prev, [key]: value }))
-    }
-
-    const handleBookmarkToggle = (studentId) => {
-        setBookmarkedIds(prev => {
-            if (prev.includes(studentId)) {
-                return prev.filter(id => id !== studentId)
-            } else {
-                return [...prev, studentId]
-            }
-        })
-    }
+    // Debounce Fetch
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            fetchCandidates()
+        }, 500)
+        return () => clearTimeout(timeoutId)
+    }, [skillSearch, filters, activeTab])
 
     const handleLogout = () => {
         localStorage.removeItem('recruiterToken')
         localStorage.removeItem('recruiter')
-        localStorage.removeItem('recruiterId')
-        navigate('/')
+        navigate('/recruiter-login')
     }
 
-    const clearFilters = () => {
-        setSearchTerm('')
-        setFilters({
-            university: '',
-            graduationYear: '',
-            degree: '',
-            branch: ''
-        })
+    const handleFilterChange = (e) => {
+        setFilters({ ...filters, [e.target.name]: e.target.value })
     }
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchStudents()
-        }, 500)
-        return () => clearTimeout(timer)
-    }, [searchTerm, filters])
-
-    const displayedStudents = showBookmarks
-        ? students.filter(s => bookmarkedIds.includes(s._id))
-        : students
 
     return (
-        <div className="min-h-screen p-6">
-            <div className="max-w-7xl mx-auto">
-
-                {/* Top Bar */}
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-4xl font-bold mb-2" style={{
-                            background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            fontFamily: 'Outfit, sans-serif'
-                        }}>
-                            Talent Scout
-                        </h1>
-                        {recruiter && (
-                            <div className="flex items-center gap-2 text-gray-400">
-                                <Building2 className="w-4 h-4" />
-                                <span>{recruiter.companyName}</span>
-                            </div>
-                        )}
+        <div className="min-h-screen bg-[#0A0F1F] text-slate-200 font-sans p-8">
+            {/* Header */}
+            <header className="flex justify-between items-start mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold text-[#3B82F6] mb-1">Talent Scout</h1>
+                    <div className="flex items-center gap-2 text-slate-400 text-sm">
+                        <Building2 className="w-4 h-4" />
+                        <span>Oracle</span>
                     </div>
+                </div>
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm"
+                >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                </button>
+            </header>
 
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-300 hover:bg-red-500/10 hover:border-red-500/50 text-gray-400 hover:text-red-400"
-                        style={{
-                            borderColor: 'rgba(71, 85, 105, 0.3)'
-                        }}
-                    >
-                        <LogOut className="w-4 h-4" />
-                        Logout
-                    </button>
+            {/* Search Container */}
+            <div className="bg-[#111827] border border-slate-800 rounded-xl p-6 mb-8">
+                {/* Main Search Input */}
+                <div className="relative mb-6">
+                    <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-500" />
+                    <input
+                        type="text"
+                        value={skillSearch}
+                        onChange={(e) => setSkillSearch(e.target.value)}
+                        placeholder="Search by skill (e.g., React, Python, Java)..."
+                        className="w-full bg-[#1F2937] border border-slate-700 rounded-lg py-3 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                    />
                 </div>
 
-                {/* Search and Filters */}
-                <div className="mb-8 border rounded-xl p-6" style={{
-                    background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%)',
-                    borderColor: 'rgba(71, 85, 105, 0.3)'
-                }}>
-                    {/* Search Bar */}
-                    <div className="mb-4">
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search by skill (e.g., React, Python, Java)..."
-                                className="w-full pl-12 pr-4 py-3 rounded-lg border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                style={{
-                                    background: 'rgba(15, 23, 42, 0.6)',
-                                    borderColor: 'rgba(71, 85, 105, 0.4)',
-                                    color: '#E2E8F0'
-                                }}
-                            />
-                        </div>
+                {/* Filters Row */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-1.5">
+                        <label className="text-xs text-slate-400 flex items-center gap-1">
+                            <Filter className="w-3 h-3" /> University
+                        </label>
+                        <input
+                            type="text"
+                            name="university"
+                            value={filters.university}
+                            onChange={handleFilterChange}
+                            placeholder="e.g., MIT, VIT"
+                            className="w-full bg-[#1F2937] border border-slate-700 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-blue-500"
+                        />
                     </div>
 
-                    {/* Filters */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <label className="block text-sm text-gray-400 mb-2">
-                                <Filter className="w-3 h-3 inline mr-1" />
-                                University
-                            </label>
-                            <input
-                                type="text"
-                                value={filters.university}
-                                onChange={(e) => handleFilterChange('university', e.target.value)}
-                                placeholder="e.g., MIT, VIT"
-                                className="w-full px-3 py-2 rounded-lg border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                style={{
-                                    background: 'rgba(15, 23, 42, 0.6)',
-                                    borderColor: 'rgba(71, 85, 105, 0.4)',
-                                    color: '#E2E8F0',
-                                    fontSize: '0.875rem'
-                                }}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm text-gray-400 mb-2">Graduation Year</label>
-                            <input
-                                type="number"
-                                value={filters.graduationYear}
-                                onChange={(e) => handleFilterChange('graduationYear', e.target.value)}
-                                placeholder="2025"
-                                min="2020"
-                                max="2030"
-                                className="w-full px-3 py-2 rounded-lg border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                style={{
-                                    background: 'rgba(15, 23, 42, 0.6)',
-                                    borderColor: 'rgba(71, 85, 105, 0.4)',
-                                    color: '#E2E8F0',
-                                    fontSize: '0.875rem'
-                                }}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm text-gray-400 mb-2">Degree</label>
-                            <input
-                                type="text"
-                                value={filters.degree}
-                                onChange={(e) => handleFilterChange('degree', e.target.value)}
-                                placeholder="B.Tech, M.Sc"
-                                className="w-full px-3 py-2 rounded-lg border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                style={{
-                                    background: 'rgba(15, 23, 42, 0.6)',
-                                    borderColor: 'rgba(71, 85, 105, 0.4)',
-                                    color: '#E2E8F0',
-                                    fontSize: '0.875rem'
-                                }}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm text-gray-400 mb-2">Branch</label>
-                            <input
-                                type="text"
-                                value={filters.branch}
-                                onChange={(e) => handleFilterChange('branch', e.target.value)}
-                                placeholder="Computer Science"
-                                className="w-full px-3 py-2 rounded-lg border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                style={{
-                                    background: 'rgba(15, 23, 42, 0.6)',
-                                    borderColor: 'rgba(71, 85, 105, 0.4)',
-                                    color: '#E2E8F0',
-                                    fontSize: '0.875rem'
-                                }}
-                            />
-                        </div>
+                    <div className="space-y-1.5">
+                        <label className="text-xs text-slate-400">Graduation Year</label>
+                        <input
+                            type="number"
+                            name="graduationYear"
+                            value={filters.graduationYear}
+                            onChange={handleFilterChange}
+                            placeholder="2025"
+                            className="w-full bg-[#1F2937] border border-slate-700 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-blue-500"
+                        />
                     </div>
 
-                    {/* Clear Filters */}
-                    {(searchTerm || filters.university || filters.graduationYear || filters.degree || filters.branch) && (
-                        <button
-                            onClick={clearFilters}
-                            className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"
-                        >
-                            <X className="w-4 h-4" />
-                            Clear All Filters
-                        </button>
-                    )}
+                    <div className="space-y-1.5">
+                        <label className="text-xs text-slate-400">Degree</label>
+                        <input
+                            type="text"
+                            name="degree"
+                            value={filters.degree}
+                            onChange={handleFilterChange}
+                            placeholder="B.Tech, M.Sc"
+                            className="w-full bg-[#1F2937] border border-slate-700 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-blue-500"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs text-slate-400">Branch</label>
+                        <input
+                            type="text"
+                            name="branch"
+                            value={filters.branch}
+                            onChange={handleFilterChange}
+                            placeholder="Computer Science"
+                            className="w-full bg-[#1F2937] border border-slate-700 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-blue-500"
+                        />
+                    </div>
                 </div>
+            </div>
 
-                {/* View Toggle */}
-                <div className="mb-6 flex gap-4">
-                    <button
-                        onClick={() => setShowBookmarks(false)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${!showBookmarks
-                            ? 'text-white shadow-lg'
-                            : 'text-gray-400 hover:text-gray-300'
-                            }`}
-                        style={!showBookmarks ? {
-                            background: 'linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%)'
-                        } : {}}
-                    >
-                        <Users className="w-4 h-4" />
-                        All Candidates ({students.length})
-                    </button>
+            {/* Tabs */}
+            <div className="flex items-center gap-4 mb-6">
+                <button
+                    onClick={() => setActiveTab('all')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'all'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-400 hover:text-white'
+                        }`}
+                >
+                    All Candidates ({activeTab === 'all' ? candidates.length : stats.total})
+                </button>
+                <button
+                    onClick={() => setActiveTab('bookmarked')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'bookmarked'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-400 hover:text-white'
+                        }`}
+                >
+                    <Bookmark className="w-4 h-4" />
+                    Bookmarked ({activeTab === 'bookmarked' ? candidates.length : stats.bookmarked})
+                </button>
+            </div>
 
-                    <button
-                        onClick={() => setShowBookmarks(true)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${showBookmarks
-                            ? 'text-white shadow-lg'
-                            : 'text-gray-400 hover:text-gray-300'
-                            }`}
-                        style={showBookmarks ? {
-                            background: 'linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%)'
-                        } : {}}
-                    >
-                        <Bookmark className="w-4 h-4" />
-                        Bookmarked ({bookmarkedIds.length})
-                    </button>
-                </div>
-
-                {/* Results */}
+            {/* Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {loading ? (
-                    <div className="text-center py-12">
-                        <div className="inline-flex items-center gap-2 text-blue-400">
-                            <span className="loading-dot">•</span>
-                            <span className="loading-dot">•</span>
-                            <span className="loading-dot">•</span>
-                        </div>
-                    </div>
-                ) : displayedStudents.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Users className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                        <p className="text-gray-400 text-lg">
-                            {showBookmarks ? 'No bookmarked candidates yet' : 'No candidates found'}
-                        </p>
-                        <p className="text-gray-500 text-sm mt-2">
-                            {showBookmarks ? 'Start bookmarking candidates to build your talent pool' : 'Try adjusting your search filters'}
-                        </p>
-                    </div>
+                    // Skeletons
+                    [...Array(6)].map((_, i) => (
+                        <div key={i} className="bg-[#111827] border border-slate-800 rounded-xl p-6 h-64 animate-pulse" />
+                    ))
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {displayedStudents.map((student) => (
-                            <CandidateCard
-                                key={student._id}
-                                student={student}
-                                isBookmarked={bookmarkedIds.includes(student._id)}
-                                onBookmarkToggle={handleBookmarkToggle}
-                            />
+                    candidates.map((candidate) => (
+                        <CandidateCard key={candidate._id} candidate={candidate} />
+                    ))
+                )}
+            </div>
+
+            {!loading && candidates.length === 0 && (
+                <div className="text-center py-20 text-slate-500">
+                    <p>No candidates found matching your criteria.</p>
+                </div>
+            )}
+        </div>
+    )
+}
+
+function CandidateCard({ candidate }) {
+    const [isBookmarked, setIsBookmarked] = useState(false)
+
+    const toggleBookmark = async () => {
+        // Implement Bookmark API call here
+        setIsBookmarked(!isBookmarked)
+    }
+
+    return (
+        <div className="bg-[#111827] border border-slate-800 rounded-xl p-6 hover:border-slate-700 transition-colors group">
+            <div className="flex justify-between items-start mb-4">
+                <div>
+                    <h3 className="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">
+                        {candidate.fullName}
+                    </h3>
+                    <div className="flex items-center gap-2 text-slate-400 text-sm">
+                        <GraduationCap className="w-4 h-4" />
+                        <span>{candidate.university}</span>
+                    </div>
+                </div>
+                <button
+                    onClick={toggleBookmark}
+                    className={`p-1.5 rounded-md transition-colors ${isBookmarked ? 'text-blue-500' : 'text-slate-600 hover:text-blue-500 hover:bg-blue-500/10'
+                        }`}
+                >
+                    <Bookmark className="w-5 h-5" fill={isBookmarked ? "currentColor" : "none"} />
+                </button>
+            </div>
+
+            {/* Bio & Skills */}
+            <div className="mb-6">
+                {candidate.bio && (
+                    <p className="text-sm text-slate-400 mb-3 line-clamp-2 min-h-[40px]">
+                        {candidate.bio}
+                    </p>
+                )}
+
+                {candidate.skills && candidate.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                        {candidate.skills.slice(0, 3).map((skill, index) => (
+                            <span key={index} className="px-2 py-1 bg-slate-800 text-blue-300 text-xs rounded border border-slate-700">
+                                {skill}
+                            </span>
                         ))}
+                        {candidate.skills.length > 3 && (
+                            <span className="text-xs text-slate-500 py-1">+{candidate.skills.length - 3}</span>
+                        )}
                     </div>
                 )}
             </div>
+
+            <div className="space-y-1 mb-6 text-sm text-slate-400">
+                <p><span className="text-slate-500">Degree:</span> {candidate.degree} in {candidate.branch || '...'}</p>
+                <p><span className="text-slate-500">Graduating:</span> {candidate.graduationYear}</p>
+            </div>
+
+            {/* Link to Portfolio - Opens in new tab */}
+            <Link
+                to={`/portfolio/${candidate.username}`}
+                target="_blank"
+                className="block w-full mt-auto"
+            >
+                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    View Profile
+                    <ExternalLink className="w-4 h-4" />
+                </button>
+            </Link>
         </div>
     )
 }

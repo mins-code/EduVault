@@ -153,8 +153,52 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                     </div>
                 </div>
 
+                {user.bio && (
+                    <p style={{
+                        fontSize: '12pt',
+                        color: '#CBD5E1',
+                        margin: '0 0 32px 0',
+                        maxWidth: '80%',
+                        marginLeft: 'auto',
+                        marginRight: 'auto',
+                        lineHeight: '1.6',
+                        fontFamily: 'Inter, sans-serif'
+                    }}>
+                        {user.bio}
+                    </p>
+                )}
+
+                {/* Skills Chips */}
+                {user.skills && user.skills.length > 0 && (
+                    <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        justifyContent: 'center',
+                        gap: '10px',
+                        marginBottom: '40px',
+                        maxWidth: '90%',
+                        marginLeft: 'auto',
+                        marginRight: 'auto'
+                    }}>
+                        {user.skills.map((skill, index) => (
+                            <span key={index} style={{
+                                padding: '6px 16px',
+                                background: 'rgba(56, 189, 248, 0.1)',
+                                border: '1px solid rgba(56, 189, 248, 0.3)',
+                                borderRadius: '20px',
+                                color: '#38BDF8',
+                                fontSize: '10pt',
+                                fontWeight: 500,
+                                fontFamily: 'Inter, sans-serif'
+                            }}>
+                                {skill}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
                 <div style={{
-                    marginTop: '40px',
+                    marginTop: '20px',
                     padding: '12px 24px',
                     background: 'rgba(45, 212, 191, 0.1)',
                     border: '1px solid rgba(45, 212, 191, 0.3)',

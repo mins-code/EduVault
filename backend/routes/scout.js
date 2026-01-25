@@ -76,7 +76,7 @@ router.get('/search', async (req, res) => {
 
         // Execute search with selected fields only
         const students = await User.find(query).select(
-            '_id fullName email university degree branch graduationYear skills bio'
+            '_id fullName email username university degree branch graduationYear skills bio'
         );
 
         res.status(200).json({

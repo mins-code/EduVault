@@ -98,12 +98,48 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                     Summary
                 </h2>
                 <p style={{ margin: '0', fontSize: '11pt', color: '#4B5563', lineHeight: '1.6' }}>
-                    {user.degree} student at {user.university} specializing in {user.branch}.
-                    Experienced in {internships.length > 0 ? 'professional internships' : 'academic projects'} with
-                    a strong foundation in technical skills and {certifications.length} professional certifications.
-                    Expected graduation: {user.graduationYear}.
+                    {user.bio ? user.bio : (
+                        `${user.degree} student at ${user.university} specializing in ${user.branch}. ` +
+                        `Experienced in ${internships.length > 0 ? 'professional internships' : 'academic projects'} with ` +
+                        `a strong foundation in technical skills and ${certifications.length} professional certifications. ` +
+                        `Expected graduation: ${user.graduationYear}.`
+                    )}
                 </p>
             </div>
+
+            {/* Technical Skills */}
+            {user.skills && user.skills.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                    <h2 style={{
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: '14pt',
+                        fontWeight: 600,
+                        color: '#1E3A8A',
+                        margin: '0 0 12px 0',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        borderBottom: '1.5px solid #0D9488',
+                        paddingBottom: '4px'
+                    }}>
+                        Technical Skills
+                    </h2>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {user.skills.map((skill, index) => (
+                            <span key={index} style={{
+                                fontSize: '10pt',
+                                color: '#0369A1',
+                                padding: '4px 12px',
+                                backgroundColor: '#E0F2FE',
+                                borderRadius: '4px',
+                                border: '1px solid #BAE6FD',
+                                fontWeight: 500
+                            }}>
+                                {skill}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Education */}
             <div style={{ marginBottom: '24px' }}>
@@ -243,7 +279,7 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                 </div>
             )}
 
-            {/* Skills & Certifications */}
+            {/* Certifications - Renamed from Skills & Certifications */}
             {certifications.length > 0 && (
                 <div style={{ marginBottom: '24px' }}>
                     <h2 style={{
@@ -257,7 +293,7 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                         borderBottom: '1.5px solid #0D9488',
                         paddingBottom: '4px'
                     }}>
-                        Skills & Certifications
+                        Certifications
                     </h2>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {certifications.map((doc) => (

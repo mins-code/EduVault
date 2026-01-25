@@ -47,8 +47,8 @@ app.get('/', (req, res) => {
     res.json({ message: 'EduVault Server is Running' });
 });
 
-// Set port from environment variable or default to 5000
-const PORT = process.env.PORT || 5000;
+// Set port from environment variable or default to 5001
+const PORT = process.env.PORT || 5001;
 
 // Start server
 app.listen(PORT, () => {

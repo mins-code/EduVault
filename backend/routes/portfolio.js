@@ -48,7 +48,9 @@ router.get('/:username', async (req, res) => {
                 degree: user.degree,
                 branch: user.branch,
                 graduationYear: user.graduationYear,
-                username: user.username
+                username: user.username,
+                skills: user.skills || [],
+                bio: user.bio || ''
             },
             documents: documents.map(doc => ({
                 _id: doc._id,

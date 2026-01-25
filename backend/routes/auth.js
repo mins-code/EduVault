@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -164,6 +165,48 @@ router.post('/login', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Server error during login'
+        });
+    }
+});
+
+// @route   PUT /api/auth/profile
+// @desc    Update user profile (bio and skills)
+// @access  Private
+router.put('/profile', auth, async (req, res) => {
+    try {
+        const { bio, skills } = req.body;
+        const userId = req.user.userId;
+
+        // Build update object
+        const updateFields = {};
+        if (bio !== undefined) updateFields.bio = bio;
+        if (skills !== undefined) updateFields.skills = skills;
+
+        // Find user and update
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { $set: updateFields },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            user
+        });
+
+    } catch (error) {
+        console.error('Profile update error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error during profile update'
         });
     }
 });
