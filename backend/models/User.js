@@ -66,6 +66,18 @@ const userSchema = new mongoose.Schema(
             max: [2030, 'Graduation year must be 2030 or earlier'],
         },
 
+        // Recruiter Search Fields
+        skills: {
+            type: [String],
+            default: [],
+        },
+
+        bio: {
+            type: String,
+            maxlength: [200, 'Bio must not exceed 200 characters'],
+            default: '',
+        },
+
         // User Role
         role: {
             type: String,

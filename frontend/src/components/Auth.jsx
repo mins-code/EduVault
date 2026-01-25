@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Shield, Lock, Mail, User, GraduationCap, BookOpen, Calendar, CheckCircle, AlertCircle } from 'lucide-react'
+import { Shield, Lock, Mail, User, GraduationCap, BookOpen, Calendar, CheckCircle, AlertCircle, Building2, Briefcase } from 'lucide-react'
 import api from '../api'
 
 export default function Auth() {
+    const [userType, setUserType] = useState('student')
     const [isLogin, setIsLogin] = useState(true)
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState({ type: '', text: '' })
@@ -15,7 +16,9 @@ export default function Auth() {
         university: '',
         degree: '',
         branch: '',
-        graduationYear: ''
+        graduationYear: '',
+        companyName: '',
+        companyWebsite: ''
     })
 
     const handleInputChange = (e) => {
@@ -23,7 +26,6 @@ export default function Auth() {
             ...formData,
             [e.target.name]: e.target.value
         })
-        // Clear message when user starts typing
         if (message.text) {
             setShowMessage(false)
             setTimeout(() => setMessage({ type: '', text: '' }), 300)
@@ -37,67 +39,120 @@ export default function Auth() {
         setMessage({ type: '', text: '' })
 
         try {
-            if (isLogin) {
-                // Login logic
-                const response = await api.post('/api/auth/login', {
-                    email: formData.email,
-                    password: formData.password
-                })
-
-                if (response.data.success) {
-                    // Store token and user data in localStorage
-                    localStorage.setItem('token', response.data.token)
-                    localStorage.setItem('user', JSON.stringify(response.data.user))
-                    // Store userId explicitly for easy access (backend returns 'id' not '_id')
-                    localStorage.setItem('userId', response.data.user.id)
-
-                    setMessage({
-                        type: 'success',
-                        text: 'Login successful! Redirecting to Dashboard...'
+            if (userType === 'student') {
+                if (isLogin) {
+                    const response = await api.post('/api/auth/login', {
+                        email: formData.email,
+                        password: formData.password
                     })
-                    setShowMessage(true)
 
-                    // Redirect to dashboard after brief delay
-                    setTimeout(() => {
-                        window.location.href = '/dashboard'
-                    }, 1500)
+                    if (response.data.success) {
+                        localStorage.setItem('token', response.data.token)
+                        localStorage.setItem('user', JSON.stringify(response.data.user))
+                        localStorage.setItem('userId', response.data.user.id)
+
+                        setMessage({
+                            type: 'success',
+                            text: 'Login successful! Redirecting to Dashboard...'
+                        })
+                        setShowMessage(true)
+
+                        setTimeout(() => {
+                            window.location.replace('/dashboard')
+                        }, 1500)
+                    }
+                } else {
+                    const response = await api.post('/api/auth/register', {
+                        fullName: formData.fullName,
+                        email: formData.email,
+                        password: formData.password,
+                        university: formData.university,
+                        degree: formData.degree,
+                        branch: formData.branch,
+                        graduationYear: parseInt(formData.graduationYear)
+                    })
+
+                    if (response.data.success) {
+                        setMessage({
+                            type: 'success',
+                            text: response.data.message
+                        })
+                        setShowMessage(true)
+
+                        setFormData({
+                            fullName: '',
+                            email: '',
+                            password: '',
+                            university: '',
+                            degree: '',
+                            branch: '',
+                            graduationYear: '',
+                            companyName: '',
+                            companyWebsite: ''
+                        })
+
+                        setTimeout(() => {
+                            setIsLogin(true)
+                            setShowMessage(false)
+                            setTimeout(() => setMessage({ type: '', text: '' }), 300)
+                        }, 2000)
+                    }
                 }
             } else {
-                // Registration logic
-                const response = await api.post('/api/auth/register', {
-                    fullName: formData.fullName,
-                    email: formData.email,
-                    password: formData.password,
-                    university: formData.university,
-                    degree: formData.degree,
-                    branch: formData.branch,
-                    graduationYear: parseInt(formData.graduationYear)
-                })
-
-                if (response.data.success) {
-                    setMessage({
-                        type: 'success',
-                        text: response.data.message // 'Vault Created Successfully'
-                    })
-                    setShowMessage(true)
-
-                    // Clear form
-                    setFormData({
-                        fullName: '',
-                        email: '',
-                        password: '',
-                        university: '',
-                        degree: '',
-                        branch: '',
-                        graduationYear: ''
+                if (isLogin) {
+                    const response = await api.post('/api/recruiters/login', {
+                        email: formData.email,
+                        password: formData.password
                     })
 
-                    // Redirect to login after 2 seconds
-                    setTimeout(() => {
-                        setIsLogin(true)
-                        setShowMessage(false)
-                        setTimeout(() => setMessage({ type: '', text: '' }), 300)
-                    }, 2000)
+                    if (response.data.success) {
+                        localStorage.setItem('recruiterToken', response.data.token)
+                        localStorage.setItem('recruiter', JSON.stringify(response.data.recruiter))
+
+                        setMessage({
+                            type: 'success',
+                            text: 'Login successful! Redirecting to Talent Scout...'
+                        })
+                        setShowMessage(true)
+
+                        setTimeout(() => {
+                            window.location.replace('/recruiter/dashboard')
+                        }, 1500)
+                    }
+                } else {
+                    const response = await api.post('/api/recruiters/register', {
+                        fullName: formData.fullName,
+                        email: formData.email,
+                        password: formData.password,
+                        companyName: formData.companyName,
+                        companyWebsite: formData.companyWebsite
+                    })
+
+                    if (response.data.success) {
+                        setMessage({
+                            type: 'success',
+                            text: 'Account created! Please login to continue.'
+                        })
+                        setShowMessage(true)
+
+                        setFormData({
+                            fullName: '',
+                            email: '',
+                            password: '',
+                            university: '',
+                            degree: '',
+                            branch: '',
+                            graduationYear: '',
+                            companyName: '',
+                            companyWebsite: ''
+                        })
+
+                        setTimeout(() => {
+                            setIsLogin(true)
+                            setShowMessage(false)
+                            setTimeout(() => setMessage({ type: '', text: '' }), 300)
+                        }, 2000)
+                    }
                 }
             }
         } catch (error) {
@@ -115,66 +170,95 @@ export default function Auth() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-8">
-            {/* Vault Card Container */}
+        <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0B1120] to-black">
             <div className="w-full max-w-md">
 
-                {/* EduVault Logo/Branding */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-primary mb-4" style={{
-                        boxShadow: '0 0 32px rgba(56, 189, 248, 0.5), 0 0 64px rgba(45, 212, 191, 0.3)'
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4" style={{
+                        background: userType === 'student'
+                            ? 'linear-gradient(135deg, #38BDF8, #2DD4BF)'
+                            : 'linear-gradient(135deg, #3B82F6, #475569)',
+                        boxShadow: userType === 'student'
+                            ? '0 0 32px rgba(56, 189, 248, 0.5), 0 0 64px rgba(45, 212, 191, 0.3)'
+                            : '0 0 32px rgba(59, 130, 246, 0.4), 0 0 64px rgba(71, 85, 105, 0.3)'
                     }}>
-                        <Shield className="w-10 h-10 text-white" strokeWidth={2.5} />
+                        {userType === 'student' ? (
+                            <Shield className="w-10 h-10 text-white" strokeWidth={2.5} />
+                        ) : (
+                            <Briefcase className="w-10 h-10 text-white" strokeWidth={2.5} />
+                        )}
                     </div>
-                    <h1 className="text-5xl font-bold mb-2" style={{
-                        background: 'linear-gradient(135deg, #38BDF8 0%, #2DD4BF 50%, #818CF8 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        fontFamily: 'Outfit, sans-serif',
-                        letterSpacing: '-0.02em'
-                    }}>
+                    <h1
+                        className="text-5xl font-bold mb-2"
+                        style={{
+                            fontFamily: 'Outfit, sans-serif',
+                            letterSpacing: '-0.02em',
+                            color: userType === 'student' ? '#38BDF8' : '#3B82F6'
+                        }}
+                    >
                         EduVault
                     </h1>
-                    <p className="text-text-secondary" style={{
+                    <p className="text-slate-400" style={{
                         fontFamily: 'Inter, sans-serif'
                     }}>
-                        Your Secure Digital Locker
+                        {userType === 'student' ? 'Your Secure Digital Locker' : 'Talent Scout Portal'}
                     </p>
                 </div>
 
-                {/* Vault Card */}
-                <div className="bg-gradient-card border border-border-subtle rounded-vault-lg shadow-vault-lg p-8">
+                <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-black/50 p-8">
 
-                    {/* Toggle Tabs */}
-                    <div className="flex gap-2 mb-6 p-1 bg-bg-bottom rounded-vault">
+                    <div className="bg-slate-900/50 p-1 rounded-lg border border-slate-700/50 mb-6">
+                        <div className="flex">
+                            <button
+                                onClick={() => setUserType('student')}
+                                className={`flex-1 py-2.5 px-4 rounded-md font-medium transition-all duration-300 flex items-center justify-center gap-2 ${userType === 'student'
+                                    ? 'bg-gradient-to-r from-blue-600 to-slate-600 text-white shadow-lg'
+                                    : 'text-slate-400 hover:text-white'
+                                    }`}
+                            >
+                                <GraduationCap className="w-4 h-4" />
+                                Student
+                            </button>
+                            <button
+                                onClick={() => setUserType('recruiter')}
+                                className={`flex-1 py-2.5 px-4 rounded-md font-medium transition-all duration-300 flex items-center justify-center gap-2 ${userType === 'recruiter'
+                                    ? 'bg-gradient-to-r from-blue-600 to-slate-600 text-white shadow-lg'
+                                    : 'text-slate-400 hover:text-white'
+                                    }`}
+                            >
+                                <Briefcase className="w-4 h-4" />
+                                Recruiter
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2 mb-6 p-1 bg-slate-950/50 rounded-lg">
                         <button
                             onClick={() => setIsLogin(true)}
-                            className={`flex-1 py-2 px-4 rounded-vault-sm font-medium transition-all duration-vault ${isLogin
-                                ? 'bg-gradient-primary text-bg-bottom shadow-vault'
-                                : 'text-text-secondary hover:text-text-primary'
+                            className={`flex-1 py-2 px-4 rounded-md font-medium transition-all duration-300 ${isLogin
+                                ? 'bg-gradient-to-r from-blue-600 to-slate-600 text-white shadow-lg'
+                                : 'text-slate-400 hover:text-white'
                                 }`}
                         >
                             Login
                         </button>
                         <button
                             onClick={() => setIsLogin(false)}
-                            className={`flex-1 py-2 px-4 rounded-vault-sm font-medium transition-all duration-vault ${!isLogin
-                                ? 'bg-gradient-primary text-bg-bottom shadow-vault'
-                                : 'text-text-secondary hover:text-text-primary'
+                            className={`flex-1 py-2 px-4 rounded-md font-medium transition-all duration-300 ${!isLogin
+                                ? 'bg-gradient-to-r from-blue-600 to-slate-600 text-white shadow-lg'
+                                : 'text-slate-400 hover:text-white'
                                 }`}
                         >
                             Create Account
                         </button>
                     </div>
 
-                    {/* Error/Success Message Alert */}
                     {message.text && (
                         <div
-                            className={`mb-4 p-4 rounded-vault border transition-all duration-500 ${showMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+                            className={`mb-4 p-4 rounded-lg border transition-all duration-500 ${showMessage ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
                                 } ${message.type === 'error'
                                     ? 'bg-red-500/10 border-red-500/30 text-red-400'
-                                    : 'bg-accent-teal/10 border-accent-teal/30 text-accent-teal'
+                                    : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                                 }`}
                         >
                             <div className="flex items-center gap-3">
@@ -190,13 +274,11 @@ export default function Auth() {
                         </div>
                     )}
 
-                    {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
 
-                        {/* Full Name - Only for Signup */}
                         {!isLogin && (
                             <div>
-                                <label className="block text-sm font-medium text-text-secondary mb-2">
+                                <label className="block text-sm font-medium text-slate-400 mb-2">
                                     <User className="w-4 h-4 inline mr-2" />
                                     Full Name
                                 </label>
@@ -206,15 +288,14 @@ export default function Auth() {
                                     value={formData.fullName}
                                     onChange={handleInputChange}
                                     placeholder="John Doe"
-                                    className="vault-input w-full"
+                                    className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all"
                                     required={!isLogin}
                                 />
                             </div>
                         )}
 
-                        {/* Email */}
                         <div>
-                            <label className="block text-sm font-medium text-text-secondary mb-2">
+                            <label className="block text-sm font-medium text-slate-400 mb-2">
                                 <Mail className="w-4 h-4 inline mr-2" />
                                 Email Address
                             </label>
@@ -223,15 +304,14 @@ export default function Auth() {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleInputChange}
-                                placeholder="student@university.edu"
-                                className="vault-input w-full"
+                                placeholder={userType === 'student' ? 'student@university.edu' : 'recruiter@company.com'}
+                                className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all"
                                 required
                             />
                         </div>
 
-                        {/* Password */}
                         <div>
-                            <label className="block text-sm font-medium text-text-secondary mb-2">
+                            <label className="block text-sm font-medium text-slate-400 mb-2">
                                 <Lock className="w-4 h-4 inline mr-2" />
                                 Password
                             </label>
@@ -241,23 +321,20 @@ export default function Auth() {
                                 value={formData.password}
                                 onChange={handleInputChange}
                                 placeholder="••••••••"
-                                className="vault-input w-full"
+                                className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all"
                                 required
                             />
-                            {/* Password Reminder - Only for Signup */}
                             {!isLogin && (
-                                <p className="mt-2 text-xs" style={{ color: '#64748B' }}>
+                                <p className="mt-2 text-xs text-slate-500">
                                     🔒 Use 8+ characters with a mix of letters, numbers, and symbols for a stronger vault key.
                                 </p>
                             )}
                         </div>
 
-                        {/* Signup-only fields */}
-                        {!isLogin && (
+                        {!isLogin && userType === 'student' && (
                             <>
-                                {/* University */}
                                 <div>
-                                    <label className="block text-sm font-medium text-text-secondary mb-2">
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">
                                         <GraduationCap className="w-4 h-4 inline mr-2" />
                                         University
                                     </label>
@@ -267,14 +344,13 @@ export default function Auth() {
                                         value={formData.university}
                                         onChange={handleInputChange}
                                         placeholder="e.g., MIT, Stanford"
-                                        className="vault-input w-full"
-                                        required={!isLogin}
+                                        className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all"
+                                        required
                                     />
                                 </div>
 
-                                {/* Degree */}
                                 <div>
-                                    <label className="block text-sm font-medium text-text-secondary mb-2">
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">
                                         <BookOpen className="w-4 h-4 inline mr-2" />
                                         Degree
                                     </label>
@@ -284,14 +360,13 @@ export default function Auth() {
                                         value={formData.degree}
                                         onChange={handleInputChange}
                                         placeholder="e.g., B.Tech, M.Sc"
-                                        className="vault-input w-full"
-                                        required={!isLogin}
+                                        className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all"
+                                        required
                                     />
                                 </div>
 
-                                {/* Branch */}
                                 <div>
-                                    <label className="block text-sm font-medium text-text-secondary mb-2">
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">
                                         <BookOpen className="w-4 h-4 inline mr-2" />
                                         Branch
                                     </label>
@@ -301,14 +376,13 @@ export default function Auth() {
                                         value={formData.branch}
                                         onChange={handleInputChange}
                                         placeholder="e.g., Computer Science"
-                                        className="vault-input w-full"
-                                        required={!isLogin}
+                                        className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all"
+                                        required
                                     />
                                 </div>
 
-                                {/* Graduation Year */}
                                 <div>
-                                    <label className="block text-sm font-medium text-text-secondary mb-2">
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">
                                         <Calendar className="w-4 h-4 inline mr-2" />
                                         Graduation Year
                                     </label>
@@ -320,54 +394,92 @@ export default function Auth() {
                                         placeholder="2026"
                                         min="2020"
                                         max="2030"
-                                        className="vault-input w-full"
-                                        required={!isLogin}
+                                        className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all"
+                                        required
                                     />
                                 </div>
                             </>
                         )}
 
-                        {/* Forgot Password - Only for Login */}
+                        {!isLogin && userType === 'recruiter' && (
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">
+                                        <Building2 className="w-4 h-4 inline mr-2" />
+                                        Company Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="companyName"
+                                        value={formData.companyName}
+                                        onChange={handleInputChange}
+                                        placeholder="e.g., Google, Microsoft"
+                                        className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">
+                                        <Mail className="w-4 h-4 inline mr-2" />
+                                        Company Website (Optional)
+                                    </label>
+                                    <input
+                                        type="url"
+                                        name="companyWebsite"
+                                        value={formData.companyWebsite}
+                                        onChange={handleInputChange}
+                                        placeholder="https://company.com"
+                                        className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all"
+                                    />
+                                </div>
+                            </>
+                        )}
+
                         {isLogin && (
                             <div className="text-right">
                                 <button
                                     type="button"
-                                    className="text-sm text-accent-cyan hover:text-accent-teal transition-colors duration-vault"
+                                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors duration-300"
                                 >
                                     Forgot Password?
                                 </button>
                             </div>
                         )}
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
-                            className="btn-primary w-full mt-6"
+                            className="w-full mt-6 py-3 px-6 rounded-lg font-semibold text-white transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
+                            style={{
+                                background: userType === 'student'
+                                    ? 'linear-gradient(135deg, #38BDF8 0%, #2DD4BF 100%)'
+                                    : 'linear-gradient(135deg, #3B82F6 0%, #475569 100%)'
+                            }}
                             disabled={loading}
                         >
                             {loading ? (
                                 <span className="flex items-center justify-center gap-2">
-                                    <span className="loading-dot">•</span>
-                                    <span className="loading-dot">•</span>
-                                    <span className="loading-dot">•</span>
+                                    <span className="animate-pulse">•</span>
+                                    <span className="animate-pulse">•</span>
+                                    <span className="animate-pulse">•</span>
                                 </span>
                             ) : (
-                                isLogin ? 'Login to Vault' : 'Create Account'
+                                isLogin
+                                    ? (userType === 'student' ? 'Login to Vault' : 'Login to Scout')
+                                    : 'Create Account'
                             )}
                         </button>
                     </form>
 
-                    {/* Divider */}
-                    <div className="vault-divider my-6"></div>
+                    <div className="my-6 border-t border-slate-700/50"></div>
 
-                    {/* Additional Info */}
-                    <p className="text-center text-sm text-text-muted">
+                    <p className="text-center text-sm text-slate-500">
                         {isLogin ? (
                             <>
                                 Don't have an account?{' '}
                                 <button
                                     onClick={() => setIsLogin(false)}
-                                    className="text-accent-cyan hover:text-accent-teal transition-colors duration-vault font-medium"
+                                    className="text-blue-400 hover:text-blue-300 transition-colors duration-300 font-medium"
                                 >
                                     Sign up
                                 </button>
@@ -377,7 +489,7 @@ export default function Auth() {
                                 Already have an account?{' '}
                                 <button
                                     onClick={() => setIsLogin(true)}
-                                    className="text-accent-cyan hover:text-accent-teal transition-colors duration-vault font-medium"
+                                    className="text-blue-400 hover:text-blue-300 transition-colors duration-300 font-medium"
                                 >
                                     Login
                                 </button>
@@ -386,11 +498,10 @@ export default function Auth() {
                     </p>
                 </div>
 
-                {/* Security Badge */}
                 <div className="mt-6 text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface-1/50 backdrop-blur-vault border border-border-subtle rounded-vault-sm">
-                        <Lock className="w-4 h-4 text-accent-teal" />
-                        <span className="text-xs text-text-secondary font-mono">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900/50 backdrop-blur-xl border border-slate-700/50 rounded-lg">
+                        <Lock className="w-4 h-4 text-blue-400" />
+                        <span className="text-xs text-slate-400 font-mono">
                             256-bit AES Encryption
                         </span>
                     </div>

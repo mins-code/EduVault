@@ -31,12 +31,16 @@ const authRoutes = require('./routes/auth');
 const documentRoutes = require('./routes/documents');
 const portfolioRoutes = require('./routes/portfolio');
 const applicationRoutes = require('./routes/applications');
+const recruiterAuthRoutes = require('./routes/recruiterAuth');
+const scoutRoutes = require('./routes/scout');
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/recruiters', recruiterAuthRoutes);
+app.use('/api/scout', scoutRoutes);
 
 // Test route
 app.get('/', (req, res) => {

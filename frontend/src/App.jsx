@@ -7,20 +7,22 @@ import SecurityDeposit from './components/SecurityDeposit'
 import TheVault from './components/TheVault'
 import Portfolio from './components/Portfolio'
 import ApplicationTracker from './components/ApplicationTracker'
+import RecruiterDashboard from './components/RecruiterDashboard'
 import api from './api'
 
 function App() {
   const [serverStatus, setServerStatus] = useState('Connecting...');
   const [isConnected, setIsConnected] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isRecruiterAuthenticated, setIsRecruiterAuthenticated] = useState(false);
 
-  // Check authentication status
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const recruiterToken = localStorage.getItem('recruiterToken');
     setIsAuthenticated(!!token);
+    setIsRecruiterAuthenticated(!!recruiterToken);
   }, []);
 
-  // Check server status
   useEffect(() => {
     const checkServerStatus = async () => {
       try {
@@ -41,19 +43,35 @@ function App() {
     <Router>
       <div className="relative">
         <Routes>
-          {/* Auth Route */}
+          {/* Auth Route (handles both Student and Recruiter) */}
           <Route
             path="/"
             element={
-              isAuthenticated ? <Navigate to="/dashboard" replace /> : <Auth />
+              localStorage.getItem('token') ? <Navigate to="/dashboard" replace /> : <Auth />
             }
           />
 
-          {/* Dashboard Route */}
+          {/* Recruiter Auth Redirect to unified Auth */}
+          <Route
+            path="/recruiter/auth"
+            element={
+              localStorage.getItem('recruiterToken') ? <Navigate to="/recruiter/dashboard" replace /> : <Auth />
+            }
+          />
+
+          {/* Recruiter Dashboard Route */}
+          <Route
+            path="/recruiter/dashboard"
+            element={
+              localStorage.getItem('recruiterToken') ? <RecruiterDashboard /> : <Navigate to="/" replace />
+            }
+          />
+
+          {/* Student Dashboard Route */}
           <Route
             path="/dashboard"
             element={
-              isAuthenticated ? <Dashboard /> : <Navigate to="/" replace />
+              localStorage.getItem('token') ? <Dashboard /> : <Navigate to="/" replace />
             }
           />
 
@@ -61,7 +79,7 @@ function App() {
           <Route
             path="/deposit"
             element={
-              isAuthenticated ? <SecurityDeposit /> : <Navigate to="/" replace />
+              localStorage.getItem('token') ? <SecurityDeposit /> : <Navigate to="/" replace />
             }
           />
 
@@ -69,7 +87,7 @@ function App() {
           <Route
             path="/vault"
             element={
-              isAuthenticated ? <TheVault /> : <Navigate to="/" replace />
+              localStorage.getItem('token') ? <TheVault /> : <Navigate to="/" replace />
             }
           />
 
@@ -77,7 +95,7 @@ function App() {
           <Route
             path="/applications"
             element={
-              isAuthenticated ? <ApplicationTracker /> : <Navigate to="/" replace />
+              localStorage.getItem('token') ? <ApplicationTracker /> : <Navigate to="/" replace />
             }
           />
 
