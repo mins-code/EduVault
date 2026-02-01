@@ -34,6 +34,7 @@ const applicationRoutes = require('./routes/applications');
 const recruiterAuthRoutes = require('./routes/recruiterAuth');
 const scoutRoutes = require('./routes/scout');
 const analyticsRoutes = require('./routes/analytics');
+const projectRoutes = require('./routes/projects');
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -43,6 +44,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/recruiters', recruiterAuthRoutes);
 app.use('/api/scout', scoutRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/projects', projectRoutes);
 
 // Test route
 app.get('/', (req, res) => {

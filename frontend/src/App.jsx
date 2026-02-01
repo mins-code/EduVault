@@ -9,6 +9,7 @@ import Portfolio from './components/Portfolio'
 import ApplicationTracker from './components/ApplicationTracker'
 import RecruiterDashboard from './components/RecruiterDashboard'
 import SecurityLog from './components/SecurityLog'
+import CodeVault from './components/CodeVault'
 import api from './api'
 
 function App() {
@@ -105,6 +106,14 @@ function App() {
             path="/security-log"
             element={
               localStorage.getItem('token') ? <SecurityLog /> : <Navigate to="/" replace />
+            }
+          />
+
+          {/* Code Vault Route */}
+          <Route
+            path="/code-vault"
+            element={
+              localStorage.getItem('token') ? <CodeVault /> : <Navigate to="/" replace />
             }
           />
 

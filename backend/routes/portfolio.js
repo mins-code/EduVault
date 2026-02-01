@@ -185,6 +185,7 @@ router.get('/:username', async (req, res) => {
         res.status(200).json({
             success: true,
             user: {
+                _id: user._id,
                 name: user.fullName,
                 email: user.email,
                 university: user.university,
