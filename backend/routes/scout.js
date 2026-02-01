@@ -99,6 +99,7 @@ router.get('/search', async (req, res) => {
 router.post('/bookmark/:studentId', authenticateRecruiter, async (req, res) => {
     try {
         const { studentId } = req.params;
+        console.log(`Attempting to bookmark student ${studentId} for recruiter ${req.recruiterId}`);
 
         // Check if student exists and has public portfolio
         const student = await User.findById(studentId);
@@ -120,7 +121,10 @@ router.post('/bookmark/:studentId', authenticateRecruiter, async (req, res) => {
         const recruiter = await Recruiter.findById(req.recruiterId);
 
         // Check if already bookmarked
-        if (recruiter.bookmarks.includes(studentId)) {
+        // Convert ObjectIds to strings for comparison to be safe
+        const isBookmarked = recruiter.bookmarks.some(id => id.toString() === studentId);
+        if (isBookmarked) {
+            console.log('Student already bookmarked');
             return res.status(400).json({
                 success: false,
                 message: 'Student already bookmarked',
@@ -130,6 +134,7 @@ router.post('/bookmark/:studentId', authenticateRecruiter, async (req, res) => {
         // Add to bookmarks
         recruiter.bookmarks.push(studentId);
         await recruiter.save();
+        console.log('Bookmark added successfully');
 
         res.status(200).json({
             success: true,
@@ -188,12 +193,22 @@ router.delete('/bookmark/:studentId', authenticateRecruiter, async (req, res) =>
 // @access  Private (Recruiter only)
 router.get('/bookmarks', authenticateRecruiter, async (req, res) => {
     try {
+        console.log('Fetching bookmarks for recruiter:', req.recruiterId);
         // Find recruiter and populate bookmarks
         const recruiter = await Recruiter.findById(req.recruiterId).populate(
             'bookmarks',
-            '_id fullName email university degree branch graduationYear skills bio'
+            '_id fullName email username university degree branch graduationYear skills bio'
         );
 
+        if (!recruiter) {
+            console.log('Recruiter not found for ID:', req.recruiterId);
+            return res.status(404).json({
+                success: false,
+                message: 'Recruiter not found',
+            });
+        }
+
+        console.log('Found bookmarks count:', recruiter.bookmarks.length);
         res.status(200).json({
             success: true,
             count: recruiter.bookmarks.length,

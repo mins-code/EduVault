@@ -169,6 +169,38 @@ router.post('/login', async (req, res) => {
     }
 });
 
+
+// @route   GET /api/auth/profile
+// @desc    Get current user's profile
+// @access  Private
+router.get('/profile', auth, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // Find user and exclude password
+        const user = await User.findById(userId).select('-password');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            user
+        });
+
+    } catch (error) {
+        console.error('Profile fetch error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while fetching profile'
+        });
+    }
+});
+
 // @route   PUT /api/auth/profile
 // @desc    Update user profile (bio and skills)
 // @access  Private

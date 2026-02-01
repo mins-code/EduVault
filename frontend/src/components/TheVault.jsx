@@ -23,8 +23,14 @@ export default function TheVault() {
         if (userDataString) {
             try {
                 const userData = JSON.parse(userDataString)
-                setUserId(userData.id)
-                fetchDocuments(userData.id)
+                // Check for both 'id' and '_id' (MongoDB uses _id)
+                const uid = userData.id || userData._id
+                if (uid) {
+                    setUserId(uid)
+                    fetchDocuments(uid)
+                } else {
+                    console.error('No userId found in localStorage')
+                }
             } catch (error) {
                 console.error('Error parsing user data:', error)
             }
@@ -551,7 +557,7 @@ export default function TheVault() {
                                                         {doc.derivedDescription && (
                                                             <div className="mb-6 p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
                                                                 <p className="text-xs text-text-muted mb-1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                                                                    AI Extracted:
+                                                                    Description
                                                                 </p>
                                                                 <p className="text-sm text-text-secondary leading-relaxed" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
                                                                     {doc.derivedDescription}

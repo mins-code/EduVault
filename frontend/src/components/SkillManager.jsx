@@ -10,14 +10,39 @@ export default function SkillManager() {
     const [message, setMessage] = useState({ type: '', text: '' })
 
     useEffect(() => {
-        // Load initial data from localStorage
-        const userStr = localStorage.getItem('user')
-        if (userStr) {
-            const user = JSON.parse(userStr)
-            setSkills(user.skills || [])
-            setBio(user.bio || '')
-        }
+        fetchUserProfile()
     }, [])
+
+    const fetchUserProfile = async () => {
+        try {
+            const token = localStorage.getItem('token')
+            if (!token) return
+
+            const config = {
+                headers: { Authorization: `Bearer ${token}` }
+            }
+
+            const response = await api.get('/api/auth/profile', config)
+
+            if (response.data.success && response.data.user) {
+                const user = response.data.user
+                setSkills(user.skills || [])
+                setBio(user.bio || '')
+
+                // Also update localStorage with fresh data
+                localStorage.setItem('user', JSON.stringify(user))
+            }
+        } catch (error) {
+            console.error('Failed to fetch profile:', error)
+            // Fallback to localStorage if API call fails
+            const userStr = localStorage.getItem('user')
+            if (userStr) {
+                const user = JSON.parse(userStr)
+                setSkills(user.skills || [])
+                setBio(user.bio || '')
+            }
+        }
+    }
 
     const handleAddSkill = (e) => {
         if (e.key === 'Enter' && input.trim()) {

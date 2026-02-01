@@ -33,7 +33,13 @@ export default function SecurityDeposit() {
         if (userDataString) {
             try {
                 const userData = JSON.parse(userDataString)
-                setUserId(userData.id)
+                // Check for both 'id' and '_id' (MongoDB uses _id)
+                const uid = userData.id || userData._id
+                if (uid) {
+                    setUserId(uid)
+                } else {
+                    console.error('No userId found in localStorage')
+                }
             } catch (error) {
                 console.error('Error parsing user data:', error)
             }
