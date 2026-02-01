@@ -33,6 +33,7 @@ const portfolioRoutes = require('./routes/portfolio');
 const applicationRoutes = require('./routes/applications');
 const recruiterAuthRoutes = require('./routes/recruiterAuth');
 const scoutRoutes = require('./routes/scout');
+const analyticsRoutes = require('./routes/analytics');
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -41,6 +42,7 @@ app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/recruiters', recruiterAuthRoutes);
 app.use('/api/scout', scoutRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Test route
 app.get('/', (req, res) => {

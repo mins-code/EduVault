@@ -8,6 +8,7 @@ import TheVault from './components/TheVault'
 import Portfolio from './components/Portfolio'
 import ApplicationTracker from './components/ApplicationTracker'
 import RecruiterDashboard from './components/RecruiterDashboard'
+import SecurityLog from './components/SecurityLog'
 import api from './api'
 
 function App() {
@@ -96,6 +97,14 @@ function App() {
             path="/applications"
             element={
               localStorage.getItem('token') ? <ApplicationTracker /> : <Navigate to="/" replace />
+            }
+          />
+
+          {/* Security Log Route */}
+          <Route
+            path="/security-log"
+            element={
+              localStorage.getItem('token') ? <SecurityLog /> : <Navigate to="/" replace />
             }
           />
 

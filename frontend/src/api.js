@@ -12,12 +12,19 @@ const api = axios.create({
 // Add a request interceptor
 api.interceptors.request.use(
     (config) => {
-        // Try to get recruiter token first (since the dashboard uses this)
-        let token = localStorage.getItem('recruiterToken');
+        // Check which user is logged in by checking localStorage
+        const user = localStorage.getItem('user');
+        const recruiter = localStorage.getItem('recruiter');
 
-        // If no recruiter token, try student token
-        if (!token) {
+        let token = null;
+
+        // If user exists (student logged in), use student token
+        if (user) {
             token = localStorage.getItem('token');
+        }
+        // Otherwise, if recruiter exists, use recruiter token
+        else if (recruiter) {
+            token = localStorage.getItem('recruiterToken');
         }
 
         if (token) {
