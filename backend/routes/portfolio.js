@@ -20,8 +20,9 @@ router.get('/:username', async (req, res) => {
     try {
         const { username } = req.params;
 
-        // Find user by username
-        const user = await User.findOne({ username: username.toLowerCase() });
+        // Find user by username and populate challenge badges
+        const user = await User.findOne({ username: username.toLowerCase() })
+            .populate('challengeBadges.challengeId');
 
         if (!user) {
             return res.status(404).json({
@@ -45,6 +46,29 @@ router.get('/:username', async (req, res) => {
         }).sort({ uploadDate: -1 });
 
         console.log(`📊 Portfolio for ${username}: ${documents.length} public documents`);
+
+        // === SKILL VERIFICATION STATS ===
+        const skillStats = {};
+        if (user.challengeBadges && user.challengeBadges.length > 0) {
+            user.challengeBadges.forEach(badge => {
+                if (badge.challengeId) {
+                    const lang = badge.challengeId.language; // e.g., 'python', 'javascript'
+                    if (lang) {
+                        if (!skillStats[lang]) {
+                            skillStats[lang] = { count: 0, level: 'Beginner' };
+                        }
+                        skillStats[lang].count += 1;
+
+                        // Determine Level
+                        const count = skillStats[lang].count;
+                        if (count > 15) skillStats[lang].level = 'Expert';
+                        else if (count > 5) skillStats[lang].level = 'Intermediate';
+                        else skillStats[lang].level = 'Beginner';
+                    }
+                }
+            });
+        }
+        console.log(`🏆 Skill Stats for ${username}:`, skillStats);
 
         // === VISIT TRACKING ===
         // Log this portfolio view asynchronously (don't block response)
@@ -195,7 +219,8 @@ router.get('/:username', async (req, res) => {
                 graduationYear: user.graduationYear,
                 username: user.username,
                 skills: user.skills || [],
-                bio: user.bio || ''
+                bio: user.bio || '',
+                skillStats: skillStats // Include calculated stats
             },
             documents: documents.map(doc => ({
                 _id: doc._id,

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useReactToPrint } from 'react-to-print'
-import { ShieldCheck, FileText, Image as ImageIcon, ExternalLink, Download, GraduationCap, Briefcase, Code, Award, FileDown, Mail, GitBranch, Star, Activity, Sparkles } from 'lucide-react'
+import { ShieldCheck, FileText, Image as ImageIcon, ExternalLink, Download, GraduationCap, Briefcase, Code, Award, FileDown, Mail, GitBranch, Star, Activity, Sparkles, CheckCircle, Trophy, Code2 } from 'lucide-react'
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import api from '../api'
 import PortfolioPDF from './PortfolioPDF'
@@ -377,6 +377,16 @@ export default function Portfolio() {
                                                 <Sparkles className="w-4 h-4" />
                                                 Galaxy 3D
                                             </button>
+                                            <button
+                                                onClick={() => setViewMode('badges')}
+                                                className={`px-4 py-2 text-sm rounded transition-all duration-200 flex items-center gap-2 ${viewMode === 'badges'
+                                                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
+                                                    : 'text-slate-400 hover:text-white'
+                                                    }`}
+                                            >
+                                                <ShieldCheck className="w-4 h-4" />
+                                                Verified
+                                            </button>
                                         </div>
                                     </div>
 
@@ -386,12 +396,11 @@ export default function Portfolio() {
                                             {user.skills.map((skill, index) => (
                                                 <span
                                                     key={index}
-                                                    className="px-3 py-1 rounded-full text-sm font-medium border"
+                                                    className="px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]"
                                                     style={{
-                                                        background: 'rgba(6, 182, 212, 0.1)',
-                                                        borderColor: 'rgba(6, 182, 212, 0.3)',
+                                                        background: 'rgba(15, 23, 42, 0.6)',
+                                                        borderColor: 'rgba(34, 211, 238, 0.2)',
                                                         color: '#22d3ee',
-                                                        boxShadow: '0 0 10px rgba(34, 211, 238, 0.1)'
                                                     }}
                                                 >
                                                     {skill}
@@ -420,6 +429,68 @@ export default function Portfolio() {
                                                 <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
                                                 INTERACTIVE SYSTEM
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {/* Badges View */}
+                                    {viewMode === 'badges' && (
+                                        <div className="min-h-[200px] flex items-center justify-center">
+                                            {user.skillStats && Object.keys(user.skillStats).length > 0 ? (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                                                    {Object.entries(user.skillStats).map(([lang, stat]) => {
+                                                        const badgeColors = {
+                                                            Beginner: { bg: 'bg-emerald-500/5', border: 'border-emerald-500/20', text: 'text-emerald-400', glow: 'shadow-[0_0_20px_rgba(16,185,129,0.1)]' },
+                                                            Intermediate: { bg: 'bg-blue-500/5', border: 'border-blue-500/20', text: 'text-blue-400', glow: 'shadow-[0_0_20px_rgba(59,130,246,0.1)]' },
+                                                            Expert: { bg: 'bg-purple-500/5', border: 'border-purple-500/20', text: 'text-purple-400', glow: 'shadow-[0_0_20px_rgba(168,85,247,0.1)]' }
+                                                        }
+                                                        const colors = badgeColors[stat.level] || badgeColors.Beginner
+
+                                                        const displayLang = {
+                                                            'javascript': 'JavaScript',
+                                                            'python': 'Python',
+                                                            'java': 'Java',
+                                                            'cpp': 'C++'
+                                                        }[lang] || lang
+
+                                                        return (
+                                                            <div key={lang} className={`relative group px-6 py-6 rounded-xl border ${colors.bg} ${colors.border} ${colors.glow} transition-all duration-300 hover:-translate-y-1 hover:border-opacity-50`}>
+                                                                <div className="flex items-center justify-between mb-4">
+                                                                    <div className={`p-2 rounded-lg ${colors.bg} border ${colors.border}`}>
+                                                                        <Code2 className={`w-5 h-5 ${colors.text}`} />
+                                                                    </div>
+                                                                    <div className={`text-xs font-bold tracking-wider px-2 py-1 rounded-full border ${colors.border} ${colors.text} bg-slate-950/30`}>
+                                                                        {stat.level.toUpperCase()}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="text-left">
+                                                                    <h4 className="text-xl font-bold text-white mb-1 tracking-tight">
+                                                                        {displayLang}
+                                                                    </h4>
+                                                                    <p className="text-sm text-slate-400 font-mono">
+                                                                        Verified Capability
+                                                                    </p>
+                                                                </div>
+
+                                                                <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 text-xs text-slate-500">
+                                                                    <CheckCircle className={`w-3 h-3 ${colors.text}`} />
+                                                                    <span>{stat.count} Challenges Solved</span>
+                                                                </div>
+
+                                                                {/* Holographic shine */}
+                                                                <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                                                                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <div className="text-center text-slate-500 py-12">
+                                                    <ShieldCheck className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                                                    <p>No verified skills yet. Solve challenges to earn badges!</p>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
