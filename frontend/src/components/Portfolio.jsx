@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useReactToPrint } from 'react-to-print'
-import { ShieldCheck, FileText, Image as ImageIcon, ExternalLink, Download, GraduationCap, Briefcase, Code, Award, FileDown, Mail, GitBranch, Star, Activity } from 'lucide-react'
-import { LineChart, Line, ResponsiveContainer } from 'recharts'
+import { ShieldCheck, FileText, Image as ImageIcon, ExternalLink, Download, GraduationCap, Briefcase, Code, Award, FileDown, Mail, GitBranch, Star, Activity, Sparkles } from 'lucide-react'
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import api from '../api'
 import PortfolioPDF from './PortfolioPDF'
+import SkillConstellation from './SkillConstellation'
 
 export default function Portfolio() {
     const { username } = useParams()
@@ -12,6 +13,8 @@ export default function Portfolio() {
     const [error, setError] = useState(null)
     const [portfolioData, setPortfolioData] = useState(null)
     const [codeProjects, setCodeProjects] = useState([])
+    const [constellationData, setConstellationData] = useState(null)
+    const [viewMode, setViewMode] = useState('list') // 'list' or 'galaxy'
     const [isRecruiter, setIsRecruiter] = useState(false)
     const [emailCopied, setEmailCopied] = useState(false)
     const resumeRef = useRef()
@@ -20,6 +23,7 @@ export default function Portfolio() {
         const recruiterToken = localStorage.getItem('recruiterToken')
         setIsRecruiter(!!recruiterToken)
         fetchPortfolio()
+        fetchConstellation(username)
     }, [username])
 
     const fetchPortfolio = async () => {
@@ -55,6 +59,22 @@ export default function Portfolio() {
             }
         } catch (error) {
             console.error('Projects fetch error:', error)
+        }
+    }
+
+    const fetchConstellation = async (username) => {
+        try {
+            console.log('🌌 Fetching constellation for:', username)
+            const response = await api.get(`/api/portfolio/${username}/constellation`)
+            if (response.data.success) {
+                setConstellationData({
+                    nodes: response.data.nodes,
+                    links: response.data.links
+                })
+                console.log('✅ Constellation loaded:', response.data.nodes.length, 'nodes')
+            }
+        } catch (error) {
+            console.error('Constellation fetch error:', error)
         }
     }
 
@@ -331,23 +351,77 @@ export default function Portfolio() {
                                 {user.university} • Class of {user.graduationYear}
                             </p>
 
-                            {/* Skills Section */}
+                            {/* Skills & Expertise Section */}
                             {user.skills && user.skills.length > 0 && (
-                                <div className="flex flex-wrap justify-center gap-3 mb-6">
-                                    {user.skills.map((skill, index) => (
-                                        <span
-                                            key={index}
-                                            className="px-3 py-1 rounded-full text-sm font-medium border"
-                                            style={{
-                                                background: 'rgba(6, 182, 212, 0.1)',
-                                                borderColor: 'rgba(6, 182, 212, 0.3)',
-                                                color: '#22d3ee',
-                                                boxShadow: '0 0 10px rgba(34, 211, 238, 0.1)'
-                                            }}
-                                        >
-                                            {skill}
-                                        </span>
-                                    ))}
+                                <div className="mb-8">
+                                    {/* Section Header with Toggle */}
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-2xl font-semibold text-white">Skills & Expertise</h3>
+                                        <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700">
+                                            <button
+                                                onClick={() => setViewMode('list')}
+                                                className={`px-4 py-2 text-sm rounded transition-all duration-200 ${viewMode === 'list'
+                                                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
+                                                    : 'text-slate-400 hover:text-white'
+                                                    }`}
+                                            >
+                                                List
+                                            </button>
+                                            <button
+                                                onClick={() => setViewMode('galaxy')}
+                                                className={`px-4 py-2 text-sm rounded transition-all duration-200 flex items-center gap-2 ${viewMode === 'galaxy'
+                                                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
+                                                    : 'text-slate-400 hover:text-white'
+                                                    }`}
+                                            >
+                                                <Sparkles className="w-4 h-4" />
+                                                Galaxy 3D
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* List View */}
+                                    {viewMode === 'list' && (
+                                        <div className="flex flex-wrap justify-center gap-3">
+                                            {user.skills.map((skill, index) => (
+                                                <span
+                                                    key={index}
+                                                    className="px-3 py-1 rounded-full text-sm font-medium border"
+                                                    style={{
+                                                        background: 'rgba(6, 182, 212, 0.1)',
+                                                        borderColor: 'rgba(6, 182, 212, 0.3)',
+                                                        color: '#22d3ee',
+                                                        boxShadow: '0 0 10px rgba(34, 211, 238, 0.1)'
+                                                    }}
+                                                >
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Galaxy View */}
+                                    {viewMode === 'galaxy' && constellationData && (
+                                        <div className="relative w-full h-[600px] bg-slate-900/40 border border-cyan-500/30 rounded-2xl overflow-hidden backdrop-blur-sm">
+                                            <SkillConstellation graphData={constellationData} />
+
+                                            {/* Holographic Overlays */}
+                                            <div className="absolute inset-0 holo-vignette"></div>
+                                            <div className="absolute inset-0 holo-scanlines opacity-10"></div>
+
+                                            {/* Corner Accents */}
+                                            <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-cyan-400/50" />
+                                            <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-cyan-400/50" />
+                                            <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-cyan-400/50" />
+                                            <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-cyan-400/50" />
+
+                                            {/* Status Label */}
+                                            <div className="absolute bottom-4 right-4 text-xs text-cyan-500 font-mono flex items-center gap-2">
+                                                <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
+                                                INTERACTIVE SYSTEM
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -645,7 +719,7 @@ export default function Portfolio() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
                                     {codeProjects.map((project) => {
                                         const activityLevel = getActivityLevel(project.activityGraph)
                                         const activityData = formatActivityData(project.activityGraph)
@@ -653,120 +727,116 @@ export default function Portfolio() {
                                         return (
                                             <div
                                                 key={project._id}
-                                                className="group rounded-2xl p-6 border transition-all duration-300 hover:-translate-y-2"
-                                                style={{
-                                                    background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.85))',
-                                                    borderColor: 'rgba(148, 163, 184, 0.1)',
-                                                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
-                                                }}
+                                                className="relative w-full h-[420px] bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-xl overflow-hidden group hover:border-cyan-500/50 transition-all duration-300"
                                             >
-                                                {/* Header */}
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div className="flex-1">
-                                                        <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                                                            <GitBranch className="w-5 h-5 text-cyan-400" />
-                                                            {project.title}
-                                                        </h4>
-                                                        <p className="text-sm text-slate-400 line-clamp-2 mb-3">
-                                                            {project.description || 'No description available'}
-                                                        </p>
+                                                {/* Hover Gradient Overlay */}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                                                {/* Content Layer */}
+                                                <div className="relative z-10 p-6 h-full flex flex-col pb-32">
+                                                    {/* Header */}
+                                                    <div className="flex items-start justify-between mb-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="text-white font-bold text-lg tracking-wide group-hover:text-cyan-400 transition-colors mb-2 flex items-center gap-2 truncate">
+                                                                <GitBranch className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                                                                <span className="truncate">{project.title}</span>
+                                                            </h4>
+                                                            <p className="text-sm text-slate-400 line-clamp-2">
+                                                                {project.description || 'No description available'}
+                                                            </p>
+                                                        </div>
                                                     </div>
+
+                                                    {/* Tags */}
+                                                    {project.tags && project.tags.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2 mb-4">
+                                                            {project.tags.slice(0, 3).map((tag, index) => (
+                                                                <span
+                                                                    key={index}
+                                                                    className="px-2 py-1 rounded-md text-xs font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+                                                                >
+                                                                    {tag}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Stats Pills - HUD Style */}
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                                                            <Star className="w-3.5 h-3.5" fill="currentColor" />
+                                                            <span className="text-xs font-semibold">{project.stats.stars}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{
+                                                            background: `${activityLevel.color}15`,
+                                                            borderColor: `${activityLevel.color}30`,
+                                                            color: activityLevel.color
+                                                        }}>
+                                                            <Activity className="w-3.5 h-3.5" />
+                                                            <span className="text-xs font-semibold">{activityLevel.intensity}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Additional Info */}
+                                                    <div className="space-y-2.5 mb-5 text-xs text-slate-400">
+                                                        <div className="flex items-center justify-between">
+                                                            <span>Forks:</span>
+                                                            <span className="text-slate-300 font-semibold">{project.stats.forks}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span>Last updated:</span>
+                                                            <span className="text-slate-300 font-semibold">{formatLastCommit(project.stats.lastCommit)}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span>Commit frequency:</span>
+                                                            <span className="text-slate-300 font-semibold">{activityLevel.description}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* View Source Button */}
+                                                    <a
+                                                        href={project.githubLink}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 hover:border-cyan-500/40 transition-all text-sm font-medium mt-auto"
+                                                    >
+                                                        <ExternalLink className="w-4 h-4" />
+                                                        View Source
+                                                    </a>
                                                 </div>
 
-                                                {/* Tags */}
-                                                {project.tags && project.tags.length > 0 && (
-                                                    <div className="flex flex-wrap gap-2 mb-4">
-                                                        {project.tags.slice(0, 3).map((tag, index) => (
-                                                            <span
-                                                                key={index}
-                                                                className="px-2 py-1 rounded-md text-xs font-medium"
-                                                                style={{
-                                                                    background: 'rgba(6, 182, 212, 0.1)',
-                                                                    color: '#22d3ee',
-                                                                    borderColor: 'rgba(6, 182, 212, 0.3)',
-                                                                    border: '1px solid'
+                                                {/* Immersive Area Chart - Bottom Landscape */}
+                                                <div className="absolute bottom-0 left-0 right-0 h-32 w-full opacity-60 group-hover:opacity-100 transition-opacity duration-500 z-20 pointer-events-auto">
+                                                    <ResponsiveContainer width="100%" height="100%">
+                                                        <AreaChart data={activityData}>
+                                                            <defs>
+                                                                <linearGradient id={`colorGlow-${project._id}`} x1="0" y1="0" x2="0" y2="1">
+                                                                    <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.4} />
+                                                                    <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
+                                                                </linearGradient>
+                                                            </defs>
+                                                            <Tooltip
+                                                                contentStyle={{
+                                                                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                                                    border: '1px solid rgba(6, 182, 212, 0.3)',
+                                                                    borderRadius: '8px',
+                                                                    padding: '8px 12px',
+                                                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
                                                                 }}
-                                                            >
-                                                                {tag}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                {/* Repository Metrics */}
-                                                <div className="space-y-3 mb-4">
-                                                    {/* Stars & Forks */}
-                                                    <div className="flex items-center justify-between p-3 rounded-lg bg-black/20">
-                                                        <div className="flex items-center gap-2">
-                                                            <Star className="w-4 h-4 text-yellow-400" fill="currentColor" />
-                                                            <div>
-                                                                <div className="text-sm font-semibold text-yellow-400">{project.stats.stars} Stars</div>
-                                                                <div className="text-xs text-slate-500">Community appreciation</div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <div className="text-sm font-semibold text-slate-300">{project.stats.forks} Forks</div>
-                                                            <div className="text-xs text-slate-500">Active contributors</div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Activity Level */}
-                                                    <div className="p-3 rounded-lg bg-black/20">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <Activity className="w-4 h-4" style={{ color: activityLevel.color }} />
-                                                            <span className="text-sm font-semibold" style={{ color: activityLevel.color }}>
-                                                                {activityLevel.intensity}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-xs text-slate-400">{activityLevel.description}</div>
-                                                        <div className="text-xs text-slate-500 mt-1">
-                                                            Last updated: {formatLastCommit(project.stats.lastCommit)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Activity Graph (Time Capsule) */}
-                                                <div
-                                                    className="mb-4 p-3 rounded-lg"
-                                                    style={{
-                                                        background: 'rgba(0, 0, 0, 0.3)',
-                                                        border: '1px solid rgba(6, 182, 212, 0.2)'
-                                                    }}
-                                                >
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="text-xs text-slate-400" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                                                            15-DAY COMMIT FREQUENCY
-                                                        </span>
-                                                        <span className="text-xs text-slate-500">
-                                                            {activityLevel.description}
-                                                        </span>
-                                                    </div>
-                                                    <ResponsiveContainer width="100%" height={50}>
-                                                        <LineChart data={activityData}>
-                                                            <Line
+                                                                labelStyle={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}
+                                                                itemStyle={{ color: '#06b6d4', fontSize: '14px', fontWeight: '600' }}
+                                                                formatter={(value) => [`${value} commits`, 'Activity']}
+                                                                labelFormatter={(index) => `Day ${index + 1}`}
+                                                            />
+                                                            <Area
                                                                 type="monotone"
                                                                 dataKey="value"
                                                                 stroke="#06b6d4"
                                                                 strokeWidth={2}
-                                                                dot={false}
+                                                                fill={`url(#colorGlow-${project._id})`}
                                                             />
-                                                        </LineChart>
+                                                        </AreaChart>
                                                     </ResponsiveContainer>
-                                                    <div className="text-xs text-slate-500 mt-2 text-center">
-                                                        Shows daily commit activity over the past 15 days
-                                                    </div>
                                                 </div>
-
-                                                {/* View Source Button */}
-                                                <a
-                                                    href={project.githubLink}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-all text-sm font-medium"
-                                                >
-                                                    <ExternalLink className="w-4 h-4" />
-                                                    View Source
-                                                </a>
                                             </div>
                                         )
                                     })}
@@ -819,6 +889,10 @@ export default function Portfolio() {
                 @keyframes float {
                     0%, 100% { transform: translate(0, 0); }
                     50% { transform: translate(30px, -30px); }
+                }
+                @keyframes scanline {
+                    0% { transform: translateY(-100%); }
+                    100% { transform: translateY(600px); }
                 }
             `}</style>
         </div>

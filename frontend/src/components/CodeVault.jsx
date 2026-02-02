@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { GitBranch, Plus, Star, Activity, Trash2, ExternalLink } from 'lucide-react'
-import { LineChart, Line, ResponsiveContainer } from 'recharts'
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import api from '../api'
@@ -103,144 +103,92 @@ export default function CodeVault() {
     }
 
     return (
-        <div className="min-h-screen flex page-transition">
+        <div className="flex h-screen bg-bg-primary overflow-hidden">
             <Sidebar />
-
-            <div className="flex-1 ml-64">
+            <div className="flex-1 flex flex-col overflow-hidden ml-64">
                 <TopBar />
+                <main className="flex-1 overflow-y-auto p-8 pt-24">
+                    <div className="w-full">
+                        <div className="mb-8">
+                            <h1 className="text-4xl font-bold text-text-primary mb-2 flex items-center gap-3">
+                                <GitBranch className="w-10 h-10 text-accent-cyan" />
+                                Code Vault
+                            </h1>
+                            <p className="text-text-secondary">
+                                Showcase your GitHub projects on your portfolio
+                            </p>
+                        </div>
 
-                <main
-                    className="pt-20 min-h-screen"
-                    style={{
-                        background: 'linear-gradient(180deg, #0A0F1F 0%, #0B1220 50%, #020617 100%)',
-                        backgroundAttachment: 'fixed'
-                    }}
-                >
-                    <div className="p-12">
-                        <div className="max-w-7xl mx-auto">
-                            {/* Header */}
-                            <div className="mb-12">
-                                <div className="flex items-center gap-4 mb-3">
-                                    <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
-                                        <GitBranch className="w-8 h-8 text-cyan-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-4xl font-display font-bold tracking-tight text-white">
-                                            💻 Code Vault
-                                        </h3>
-                                        <p className="text-slate-400 text-lg mt-1" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                                            Manage your active repositories
-                                        </p>
-                                    </div>
-                                </div>
+                        {/* Add Project Section */}
+                        <div className="mb-8 p-6 rounded-xl border border-cyan-500/20 bg-slate-900/60 backdrop-blur-sm shadow-lg shadow-cyan-500/5">
+                            <h2 className="text-xl font-semibold text-text-primary mb-4">Add New Project</h2>
+                            <div className="flex gap-4">
+                                <input
+                                    type="text"
+                                    value={githubLink}
+                                    onChange={(e) => setGithubLink(e.target.value)}
+                                    placeholder="Paste GitHub repository URL..."
+                                    className="flex-1 px-4 py-3 rounded-lg bg-slate-950/80 border-2 border-slate-700/50 text-text-primary placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                                    onKeyPress={(e) => e.key === 'Enter' && handleAddProject()}
+                                />
+                                <button
+                                    onClick={handleAddProject}
+                                    disabled={adding || !githubLink.trim()}
+                                    className="px-6 py-3 rounded-lg bg-accent-cyan hover:bg-accent-cyan/90 text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                    {adding ? 'Adding...' : 'Add Project'}
+                                </button>
                             </div>
+                        </div>
 
-                            {/* Terminal-style Input */}
-                            <div
-                                className="mb-12 p-8 rounded-2xl border"
-                                style={{
-                                    background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.85))',
-                                    borderColor: 'rgba(6, 182, 212, 0.3)',
-                                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
-                                }}
-                            >
-                                <div className="flex items-center gap-2 mb-4">
-                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                    <span className="ml-4 text-slate-500 text-sm" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                                        terminal
-                                    </span>
-                                </div>
-                                <div className="flex gap-3">
-                                    <div className="flex-1 relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-400" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                                            $
-                                        </span>
-                                        <input
-                                            type="text"
-                                            value={githubLink}
-                                            onChange={(e) => setGithubLink(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && handleAddProject()}
-                                            placeholder="https://github.com/username/repo..."
-                                            className="w-full px-4 pl-8 py-4 rounded-xl border bg-black/30 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 transition-all"
-                                            style={{
-                                                fontFamily: 'JetBrains Mono, monospace',
-                                                borderColor: 'rgba(148, 163, 184, 0.2)'
-                                            }}
-                                            disabled={adding}
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={handleAddProject}
-                                        disabled={adding || !githubLink.trim()}
-                                        className="px-6 py-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                        style={{
-                                            background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-                                            color: 'white',
-                                            boxShadow: '0 4px 20px rgba(6, 182, 212, 0.3)'
-                                        }}
-                                    >
-                                        <Plus className="w-5 h-5" />
-                                        {adding ? 'Initializing...' : 'Initialize Repository'}
-                                    </button>
-                                </div>
+                        {/* Loading State */}
+                        {loading && (
+                            <div className="text-center py-12">
+                                <p className="text-text-secondary">Loading projects...</p>
                             </div>
+                        )}
 
-                            {/* Loading State */}
-                            {loading && (
-                                <div className="text-center py-20">
-                                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-cyan-500 border-t-transparent"></div>
-                                    <p className="text-cyan-400 mt-4" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                                        LOADING REPOSITORIES...
-                                    </p>
-                                </div>
-                            )}
+                        {/* Empty State */}
+                        {!loading && projects.length === 0 && (
+                            <div className="text-center py-12">
+                                <GitBranch className="w-16 h-16 text-text-muted mx-auto mb-4" />
+                                <p className="text-text-secondary mb-2">No projects yet</p>
+                                <p className="text-text-muted text-sm">Add your first GitHub repository to get started</p>
+                            </div>
+                        )}
 
-                            {/* Empty State */}
-                            {!loading && projects.length === 0 && (
-                                <div className="text-center py-20">
-                                    <GitBranch className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                                    <p className="text-slate-500 text-lg" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                                        No repositories initialized yet
-                                    </p>
-                                    <p className="text-slate-600 text-sm mt-2">
-                                        Add your first GitHub repository to get started
-                                    </p>
-                                </div>
-                            )}
+                        {/* Project Cards Grid - HOLOGRAPHIC HUD DESIGN */}
+                        {!loading && projects.length > 0 && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                                {projects.map((project) => {
+                                    const activityLevel = getActivityLevel(project.activityGraph)
+                                    const activityData = formatActivityData(project.activityGraph)
 
-                            {/* Project Cards Grid */}
-                            {!loading && projects.length > 0 && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {projects.map((project) => {
-                                        const activityLevel = getActivityLevel(project.activityGraph)
-                                        const activityData = formatActivityData(project.activityGraph)
+                                    return (
+                                        <div
+                                            key={project._id}
+                                            className="relative w-full h-[420px] bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-xl overflow-hidden group hover:border-cyan-500/50 transition-all duration-300"
+                                        >
+                                            {/* Hover Gradient Overlay */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-                                        return (
-                                            <div
-                                                key={project._id}
-                                                className="group rounded-2xl p-6 border transition-all duration-300 hover:-translate-y-2"
-                                                style={{
-                                                    background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.85))',
-                                                    borderColor: 'rgba(148, 163, 184, 0.1)',
-                                                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
-                                                }}
-                                            >
+                                            {/* Content Layer */}
+                                            <div className="relative z-10 p-6 h-full flex flex-col pb-32">
                                                 {/* Header */}
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div className="flex-1">
-                                                        <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                                                            <GitBranch className="w-5 h-5 text-cyan-400" />
-                                                            {project.title}
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div className="flex-1 min-w-0 pr-2">
+                                                        <h4 className="text-white font-bold text-lg tracking-wide group-hover:text-cyan-400 transition-colors mb-2 flex items-center gap-2 truncate">
+                                                            <GitBranch className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                                                            <span className="truncate">{project.title}</span>
                                                         </h4>
-                                                        <p className="text-sm text-slate-400 line-clamp-2 mb-3">
+                                                        <p className="text-sm text-slate-400 line-clamp-2">
                                                             {project.description || 'No description available'}
                                                         </p>
                                                     </div>
                                                     <button
                                                         onClick={() => handleDeleteProject(project._id)}
-                                                        className="p-2 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all"
+                                                        className="p-2 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all flex-shrink-0"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -252,13 +200,7 @@ export default function CodeVault() {
                                                         {project.tags.slice(0, 3).map((tag, index) => (
                                                             <span
                                                                 key={index}
-                                                                className="px-2 py-1 rounded-md text-xs font-medium"
-                                                                style={{
-                                                                    background: 'rgba(6, 182, 212, 0.1)',
-                                                                    color: '#22d3ee',
-                                                                    borderColor: 'rgba(6, 182, 212, 0.3)',
-                                                                    border: '1px solid'
-                                                                }}
+                                                                className="px-2 py-1 rounded-md text-xs font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
                                                             >
                                                                 {tag}
                                                             </span>
@@ -266,86 +208,88 @@ export default function CodeVault() {
                                                     </div>
                                                 )}
 
-                                                {/* Repository Metrics */}
-                                                <div className="space-y-3 mb-4">
-                                                    {/* Stars & Forks */}
-                                                    <div className="flex items-center justify-between p-3 rounded-lg bg-black/20">
-                                                        <div className="flex items-center gap-2">
-                                                            <Star className="w-4 h-4 text-yellow-400" fill="currentColor" />
-                                                            <div>
-                                                                <div className="text-sm font-semibold text-yellow-400">{project.stats.stars} Stars</div>
-                                                                <div className="text-xs text-slate-500">Community appreciation</div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <div className="text-sm font-semibold text-slate-300">{project.stats.forks} Forks</div>
-                                                            <div className="text-xs text-slate-500">Active contributors</div>
-                                                        </div>
+                                                {/* Stats Pills - HUD Style */}
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                                                        <Star className="w-3.5 h-3.5" fill="currentColor" />
+                                                        <span className="text-xs font-semibold">{project.stats.stars}</span>
                                                     </div>
-
-                                                    {/* Activity Level */}
-                                                    <div className="p-3 rounded-lg bg-black/20">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <Activity className="w-4 h-4" style={{ color: activityLevel.color }} />
-                                                            <span className="text-sm font-semibold" style={{ color: activityLevel.color }}>
-                                                                {activityLevel.intensity}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-xs text-slate-400">{activityLevel.description}</div>
-                                                        <div className="text-xs text-slate-500 mt-1">
-                                                            Last updated: {formatLastCommit(project.stats.lastCommit)}
-                                                        </div>
+                                                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{
+                                                        background: `${activityLevel.color}15`,
+                                                        borderColor: `${activityLevel.color}30`,
+                                                        color: activityLevel.color
+                                                    }}>
+                                                        <Activity className="w-3.5 h-3.5" />
+                                                        <span className="text-xs font-semibold">{activityLevel.intensity}</span>
                                                     </div>
                                                 </div>
 
-                                                {/* Activity Graph (Time Capsule) */}
-                                                <div
-                                                    className="mb-4 p-3 rounded-lg"
-                                                    style={{
-                                                        background: 'rgba(0, 0, 0, 0.3)',
-                                                        border: '1px solid rgba(6, 182, 212, 0.2)'
-                                                    }}
-                                                >
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="text-xs text-slate-400" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                                                            15-DAY COMMIT FREQUENCY
-                                                        </span>
-                                                        <span className="text-xs text-slate-500">
-                                                            {activityLevel.description}
-                                                        </span>
+                                                {/* Additional Info */}
+                                                <div className="space-y-2.5 mb-5 text-xs text-slate-400">
+                                                    <div className="flex items-center justify-between">
+                                                        <span>Forks:</span>
+                                                        <span className="text-slate-300 font-semibold">{project.stats.forks}</span>
                                                     </div>
-                                                    <ResponsiveContainer width="100%" height={50}>
-                                                        <LineChart data={activityData}>
-                                                            <Line
-                                                                type="monotone"
-                                                                dataKey="value"
-                                                                stroke="#06b6d4"
-                                                                strokeWidth={2}
-                                                                dot={false}
-                                                            />
-                                                        </LineChart>
-                                                    </ResponsiveContainer>
-                                                    <div className="text-xs text-slate-500 mt-2 text-center">
-                                                        Shows daily commit activity over the past 15 days
+                                                    <div className="flex items-center justify-between">
+                                                        <span>Last updated:</span>
+                                                        <span className="text-slate-300 font-semibold">{formatLastCommit(project.stats.lastCommit)}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span>Commit frequency:</span>
+                                                        <span className="text-slate-300 font-semibold">{activityLevel.description}</span>
                                                     </div>
                                                 </div>
 
-                                                {/* GitHub Link */}
+                                                {/* View Source Button */}
                                                 <a
                                                     href={project.githubLink}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-all text-sm font-medium"
+                                                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 hover:border-cyan-500/40 transition-all text-sm font-medium mt-auto"
                                                 >
                                                     <ExternalLink className="w-4 h-4" />
-                                                    View on GitHub
+                                                    View Source
                                                 </a>
                                             </div>
-                                        )
-                                    })}
-                                </div>
-                            )}
-                        </div>
+
+                                            {/* Immersive Area Chart - Bottom Landscape */}
+                                            <div className="absolute bottom-0 left-0 right-0 h-32 w-full opacity-60 group-hover:opacity-100 transition-opacity duration-500 z-20 pointer-events-auto">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <AreaChart data={activityData}>
+                                                        <defs>
+                                                            <linearGradient id={`colorGlow-${project._id}`} x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.4} />
+                                                                <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <Tooltip
+                                                            contentStyle={{
+                                                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                                                border: '1px solid rgba(6, 182, 212, 0.3)',
+                                                                borderRadius: '8px',
+                                                                padding: '8px 12px',
+                                                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+                                                            }}
+                                                            labelStyle={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}
+                                                            itemStyle={{ color: '#06b6d4', fontSize: '14px', fontWeight: '600' }}
+                                                            formatter={(value) => [`${value} commits`, 'Activity']}
+                                                            labelFormatter={(index) => `Day ${index + 1}`}
+                                                        />
+                                                        <Area
+                                                            type="monotone"
+                                                            dataKey="value"
+                                                            stroke="#06b6d4"
+                                                            strokeWidth={2}
+                                                            fill={`url(#colorGlow-${project._id})`}
+                                                        />
+                                                    </AreaChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
                     </div>
                 </main>
             </div>

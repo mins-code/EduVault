@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Document = require('../models/Document');
 const Visit = require('../models/Visit');
 const Recruiter = require('../models/Recruiter');
+const Project = require('../models/Project');
 const cloudinary = require('../config/cloudinary');
 const geoip = require('geoip-lite');
 
@@ -295,6 +296,97 @@ router.get('/:username/document/:docId', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error generating secure document link'
+        });
+    }
+});
+
+// @route   GET /api/portfolio/:username/constellation
+// @desc    Get 3D graph data for skill constellation
+// @access  Public
+router.get('/:username/constellation', async (req, res) => {
+    try {
+        const { username } = req.params;
+
+        // Find user by username
+        const user = await User.findOne({ username: username.toLowerCase() });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Fetch all projects for this user
+        const projects = await Project.find({ userId: user._id }).lean();
+
+        // Build graph data
+        const nodes = [];
+        const links = [];
+
+        // Central "Me" node
+        nodes.push({
+            id: 'Me',
+            group: 'user',
+            val: 20,
+            name: user.fullName || user.username
+        });
+
+        // Get unique skills from user
+        const skills = user.skills || [];
+        const skillSet = new Set(skills);
+
+        // Add skill nodes and link to "Me"
+        skillSet.forEach(skill => {
+            nodes.push({
+                id: skill,
+                group: 'skill',
+                val: 10,
+                name: skill
+            });
+            links.push({
+                source: 'Me',
+                target: skill
+            });
+        });
+
+        // Add project nodes and link to their tags
+        projects.forEach(project => {
+            const projectId = project.title;
+            nodes.push({
+                id: projectId,
+                group: 'project',
+                val: 15,
+                name: project.title,
+                githubLink: project.githubLink,
+                description: project.description
+            });
+
+            // Link project to its tags (if tag exists in skills)
+            if (project.tags && project.tags.length > 0) {
+                project.tags.forEach(tag => {
+                    if (skillSet.has(tag)) {
+                        links.push({
+                            source: projectId,
+                            target: tag
+                        });
+                    }
+                });
+            }
+        });
+
+        console.log(`🌌 Constellation for ${username}: ${nodes.length} nodes, ${links.length} links`);
+
+        res.json({
+            success: true,
+            nodes,
+            links
+        });
+    } catch (error) {
+        console.error('Constellation fetch error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error generating constellation data'
         });
     }
 });
