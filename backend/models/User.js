@@ -84,6 +84,22 @@ const userSchema = new mongoose.Schema(
             enum: ['student', 'admin'],
             default: 'student',
         },
+
+        // Challenge Badges
+        challengeBadges: [{
+            challengeId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Challenge'
+            },
+            awardedAt: {
+                type: Date,
+                default: Date.now
+            },
+            submissionId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Submission'
+            }
+        }]
     },
     {
         // Automatically add createdAt and updatedAt timestamps

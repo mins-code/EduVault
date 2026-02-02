@@ -10,6 +10,8 @@ import ApplicationTracker from './components/ApplicationTracker'
 import RecruiterDashboard from './components/RecruiterDashboard'
 import SecurityLog from './components/SecurityLog'
 import CodeVault from './components/CodeVault'
+import ChallengeSolve from './components/ChallengeSolve'
+import Challenges from './components/Challenges'
 import api from './api'
 
 function App() {
@@ -114,6 +116,22 @@ function App() {
             path="/code-vault"
             element={
               localStorage.getItem('token') ? <CodeVault /> : <Navigate to="/" replace />
+            }
+          />
+
+          {/* Challenge Solve Route */}
+          <Route
+            path="/challenges/:id"
+            element={
+              localStorage.getItem('token') ? <ChallengeSolve /> : <Navigate to="/" replace />
+            }
+          />
+
+          {/* Challenges List Route */}
+          <Route
+            path="/challenges"
+            element={
+              localStorage.getItem('token') ? <Challenges /> : <Navigate to="/" replace />
             }
           />
 

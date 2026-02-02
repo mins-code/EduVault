@@ -1,4 +1,4 @@
-import { Shield, LayoutDashboard, PlusCircle, Grid, Briefcase, Target, Eye, GitBranch } from 'lucide-react'
+import { Shield, LayoutDashboard, PlusCircle, Grid, Briefcase, Target, Eye, GitBranch, Code2 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
@@ -23,6 +23,7 @@ export default function Sidebar() {
         { name: 'Security Deposit', icon: PlusCircle, path: '/deposit' },
         { name: 'The Vault', icon: Grid, path: '/vault' },
         { name: 'Code Vault', icon: GitBranch, path: '/code-vault' },
+        { name: 'Challenges', icon: Code2, path: '/challenges' },
         { name: 'Surveillance', icon: Eye, path: '/security-log' },
         { name: 'Mission Control', icon: Target, path: '/applications' },
         ...(username ? [{ name: 'Portfolio', icon: Briefcase, path: `/portfolio/${username}` }] : [])
