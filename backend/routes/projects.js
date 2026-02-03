@@ -32,6 +32,10 @@ const fetchGitHubMetadata = async (owner, repo) => {
 
         const data = response.data;
 
+        // Log the tags being pulled from GitHub
+        console.log(`🏷️  GitHub Topics for ${owner}/${repo}:`, data.topics || []);
+        console.log(`📊 Repo Stats - Stars: ${data.stargazers_count}, Forks: ${data.forks_count}`);
+
         return {
             title: data.name,
             description: data.description || '',
@@ -145,7 +149,6 @@ router.post('/', auth, async (req, res) => {
         // Try to fetch metadata from GitHub
         const metadata = await fetchGitHubMetadata(parsed.owner, parsed.repo);
 
-        // Prepare project data
         const projectData = {
             userId,
             githubLink,
@@ -156,10 +159,14 @@ router.post('/', auth, async (req, res) => {
             activityGraph: generateActivityGraph()
         };
 
+        console.log(`📝 Project Data - Tags being saved:`, projectData.tags);
+        console.log(`💡 Tip: Ensure these tags match your User Skills for galaxy connections!`);
+
         const project = new Project(projectData);
         await project.save();
 
         console.log(`✅ Project added: ${project.title} for user ${userId}`);
+        console.log(`🔗 Final saved tags:`, project.tags);
 
         res.status(201).json({
             success: true,
@@ -170,6 +177,138 @@ router.post('/', auth, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error creating project'
+        });
+    }
+});
+
+// @route   PATCH /api/projects/:id
+// @desc    Update project tags and metadata
+// @access  Private
+router.patch('/:id', auth, async (req, res) => {
+    try {
+        const userId = req.user.userId || req.user.id;
+        const { id } = req.params;
+        const { tags, title, description } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID not found in token'
+            });
+        }
+
+        // Find and verify ownership
+        const project = await Project.findById(id);
+
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: 'Project not found'
+            });
+        }
+
+        if (project.userId.toString() !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to update this project'
+            });
+        }
+
+        // Update fields if provided
+        if (tags !== undefined) project.tags = tags;
+        if (title !== undefined) project.title = title;
+        if (description !== undefined) project.description = description;
+
+        await project.save();
+
+        console.log(`✏️  Project updated: ${project.title}`);
+        console.log(`🏷️  New tags:`, project.tags);
+
+        res.json({
+            success: true,
+            project
+        });
+    } catch (error) {
+        console.error('Project update error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating project'
+        });
+    }
+});
+
+// @route   PATCH /api/projects/:id/sync
+// @desc    Re-sync project with GitHub to fetch latest metadata
+// @access  Private
+router.patch('/:id/sync', auth, async (req, res) => {
+    try {
+        const userId = req.user.userId || req.user.id;
+        const { id } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID not found in token'
+            });
+        }
+
+        // Find and verify ownership
+        const project = await Project.findById(id);
+
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: 'Project not found'
+            });
+        }
+
+        if (project.userId.toString() !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to sync this project'
+            });
+        }
+
+        // Parse GitHub URL
+        const parsed = parseGitHubUrl(project.githubLink);
+        if (!parsed) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid GitHub URL in project'
+            });
+        }
+
+        // Fetch fresh metadata from GitHub
+        const metadata = await fetchGitHubMetadata(parsed.owner, parsed.repo);
+
+        if (metadata) {
+            // Update project with fresh data
+            project.title = metadata.title;
+            project.description = metadata.description;
+            project.tags = metadata.tags;
+            project.stats = metadata.stats;
+
+            await project.save();
+
+            console.log(`🔄 Project synced: ${project.title}`);
+            console.log(`🏷️  Updated tags:`, project.tags);
+
+            res.json({
+                success: true,
+                project,
+                message: 'Project synced successfully with GitHub'
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: 'Failed to fetch data from GitHub'
+            });
+        }
+    } catch (error) {
+        console.error('Project sync error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error syncing project'
         });
     }
 });

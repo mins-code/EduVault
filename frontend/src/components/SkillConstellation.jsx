@@ -58,20 +58,55 @@ export default function SkillConstellation({ graphData }) {
     // Create glowing 3D sphere nodes
     const nodeThreeObject = (node) => {
         const color = getNodeColor(node)
+        const isHighlighted = highlightNodes.has(node.id)
+
         const material = new THREE.MeshLambertMaterial({
             color: color,
             transparent: true,
-            opacity: 0.9,
+            opacity: isHighlighted ? 1 : 0.9,
             emissive: color, // GLOW EFFECT
-            emissiveIntensity: 0.6
+            emissiveIntensity: isHighlighted ? 1.2 : 0.6
         })
-        const geometry = new THREE.SphereGeometry(node.val || 5)
+        const geometry = new THREE.SphereGeometry((node.val || 5) * (isHighlighted ? 1.3 : 1))
         return new THREE.Mesh(geometry, material)
     }
 
+    const [highlightNodes, setHighlightNodes] = useState(new Set())
+    const [highlightLinks, setHighlightLinks] = useState(new Set())
+
     const handleNodeClick = (node) => {
+        // Handle project nodes - open GitHub link
         if (node.group === 'project' && node.githubLink) {
             window.open(node.githubLink, '_blank')
+            return
+        }
+
+        // Handle skill nodes - highlight connected projects
+        if (node.group === 'skill') {
+            const connectedNodes = new Set()
+            const connectedLinks = new Set()
+
+            // Find all links connected to this skill
+            graphData.links.forEach((link, index) => {
+                if (link.target === node.id || link.target.id === node.id) {
+                    connectedLinks.add(index)
+                    // Add the source node (project)
+                    const sourceId = typeof link.source === 'object' ? link.source.id : link.source
+                    connectedNodes.add(sourceId)
+                }
+            })
+
+            // Add the clicked skill node itself
+            connectedNodes.add(node.id)
+
+            setHighlightNodes(connectedNodes)
+            setHighlightLinks(connectedLinks)
+
+            // Clear highlights after 3 seconds
+            setTimeout(() => {
+                setHighlightNodes(new Set())
+                setHighlightLinks(new Set())
+            }, 3000)
         }
     }
 
@@ -114,8 +149,16 @@ export default function SkillConstellation({ graphData }) {
                 `}
                 nodeThreeObject={nodeThreeObject}
                 nodeOpacity={1}
-                linkColor={() => 'rgba(6, 182, 212, 0.4)'}
-                linkWidth={1}
+                linkColor={(link) => {
+                    const linkIndex = graphData.links.indexOf(link)
+                    return highlightLinks.has(linkIndex)
+                        ? 'rgba(168, 85, 247, 0.9)' // Purple highlight
+                        : 'rgba(6, 182, 212, 0.4)' // Default cyan
+                }}
+                linkWidth={(link) => {
+                    const linkIndex = graphData.links.indexOf(link)
+                    return highlightLinks.has(linkIndex) ? 3 : 1
+                }}
                 linkOpacity={0.6}
                 linkDirectionalParticles={2}
                 linkDirectionalParticleWidth={2}
