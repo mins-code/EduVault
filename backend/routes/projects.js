@@ -52,9 +52,61 @@ const fetchGitHubMetadata = async (owner, repo) => {
     }
 };
 
-// Helper function to generate mock activity graph
-const generateActivityGraph = () => {
-    return Array.from({ length: 15 }, () => Math.floor(Math.random() * 11));
+// Helper function to fetch commit stats from GitHub with retry logic
+const fetchCommitStats = async (owner, repo) => {
+    let retries = 3;
+
+    while (retries > 0) {
+        try {
+            console.log(`📡 Fetching stats for ${owner}/${repo} (Attempts left: ${retries})`);
+
+            // Endpoint: GET /repos/{owner}/{repo}/stats/commit_activity
+            const response = await axios.get(`https://api.github.com/repos/${owner}/${repo}/stats/commit_activity`, {
+                timeout: 5000,
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+
+            const weeks = response.data;
+
+            if (Array.isArray(weeks)) {
+                // Success! We have data.
+                // We need the last 15 weeks of activity to show broader history
+
+                let weeklyStats = [];
+
+                // Take the last 15 weeks
+                const recentWeeks = weeks.slice(-15);
+
+                // Map to just the total commits for that week
+                weeklyStats = recentWeeks.map(week => week.total);
+
+                // If we have fewer than 15 weeks (new repo), pad with 0s at the start
+                while (weeklyStats.length < 15) {
+                    weeklyStats.unshift(0);
+                }
+
+                console.log(`📈 Fetched real weekly commit history for ${owner}/${repo}`);
+                return weeklyStats;
+            } else {
+                // 202 Accepted but processing
+                console.log(`⏳ GitHub stats calculating for ${owner}/${repo}...`);
+            }
+
+        } catch (error) {
+            console.log(`⚠️ GitHub stats fetch error: ${error.message}`);
+        }
+
+        retries--;
+        // Wait 1.5s before next try if we have retries left
+        if (retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+    }
+
+    console.log(`❌ Failed to fetch stats for ${owner}/${repo} after retries. Returning empty graph.`);
+    return Array(15).fill(0);
 };
 
 // @route   GET /api/projects/user/:userId
@@ -148,6 +200,8 @@ router.post('/', auth, async (req, res) => {
 
         // Try to fetch metadata from GitHub
         const metadata = await fetchGitHubMetadata(parsed.owner, parsed.repo);
+        // Fetch commit stats
+        const activityGraph = await fetchCommitStats(parsed.owner, parsed.repo);
 
         const projectData = {
             userId,
@@ -156,7 +210,7 @@ router.post('/', auth, async (req, res) => {
             description: description || metadata?.description || '',
             tags: tags || metadata?.tags || [],
             stats: metadata?.stats || { stars: 0, forks: 0, lastCommit: null },
-            activityGraph: generateActivityGraph()
+            activityGraph: activityGraph
         };
 
         console.log(`📝 Project Data - Tags being saved:`, projectData.tags);
@@ -280,6 +334,8 @@ router.patch('/:id/sync', auth, async (req, res) => {
 
         // Fetch fresh metadata from GitHub
         const metadata = await fetchGitHubMetadata(parsed.owner, parsed.repo);
+        // Fetch fresh activity stats
+        const activityGraph = await fetchCommitStats(parsed.owner, parsed.repo);
 
         if (metadata) {
             // Update project with fresh data
@@ -287,6 +343,7 @@ router.patch('/:id/sync', auth, async (req, res) => {
             project.description = metadata.description;
             project.tags = metadata.tags;
             project.stats = metadata.stats;
+            project.activityGraph = activityGraph; // Update graph with real data
 
             await project.save();
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { GitBranch, Plus, Star, Activity, Trash2, ExternalLink } from 'lucide-react'
+import { GitBranch, Plus, Star, Activity, Trash2, ExternalLink, RefreshCw } from 'lucide-react'
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
@@ -186,12 +186,33 @@ export default function CodeVault() {
                                                             {project.description || 'No description available'}
                                                         </p>
                                                     </div>
-                                                    <button
-                                                        onClick={() => handleDeleteProject(project._id)}
-                                                        className="p-2 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all flex-shrink-0"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                    <div className="flex gap-2 flex-shrink-0">
+                                                        <button
+                                                            onClick={async () => {
+                                                                try {
+                                                                    const btn = document.getElementById(`sync-${project._id}`)
+                                                                    if (btn) btn.classList.add('animate-spin')
+
+                                                                    await api.patch(`/api/projects/${project._id}/sync`)
+                                                                    fetchProjects()
+                                                                } catch (e) {
+                                                                    console.error(e)
+                                                                    alert('Sync failed')
+                                                                }
+                                                            }}
+                                                            id={`sync-${project._id}`}
+                                                            className="p-2 rounded-lg hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 transition-all"
+                                                            title="Sync with GitHub"
+                                                        >
+                                                            <RefreshCw className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteProject(project._id)}
+                                                            className="p-2 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
                                                 </div>
 
                                                 {/* Tags */}
@@ -236,7 +257,7 @@ export default function CodeVault() {
                                                     </div>
                                                     <div className="flex items-center justify-between">
                                                         <span>Commit frequency:</span>
-                                                        <span className="text-slate-300 font-semibold">{activityLevel.description}</span>
+                                                        <span className="text-slate-300 font-semibold">{activityLevel.description.replace('day', 'week')}</span>
                                                     </div>
                                                 </div>
 
@@ -273,7 +294,7 @@ export default function CodeVault() {
                                                             labelStyle={{ color: '#94a3b8', fontSize: '12px', marginBottom: '4px' }}
                                                             itemStyle={{ color: '#06b6d4', fontSize: '14px', fontWeight: '600' }}
                                                             formatter={(value) => [`${value} commits`, 'Activity']}
-                                                            labelFormatter={(index) => `Day ${index + 1}`}
+                                                            labelFormatter={(index) => `Week ${index + 1}`}
                                                         />
                                                         <Area
                                                             type="monotone"
