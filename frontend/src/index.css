@@ -27,6 +27,26 @@
     scroll-behavior: smooth;
   }
 
+  /* Custom Scrollbar - Cyberpunk Theme */
+  /* Width */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: #0f172a; /* Slate 900 */
+  }
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #334155; /* Slate 700 */
+    border-radius: 4px;
+  }
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #06b6d4; /* Cyan 500 */
+  }
+
   /* Premium Vertical Gradient Background */
   body {
     @apply font-sans text-text-primary;

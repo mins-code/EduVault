@@ -5,6 +5,7 @@ import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import ResumePDF from './ResumePDF'
 import SkillManager from './SkillManager'
+import CountUp from './CountUp'
 import api from '../api'
 
 export default function Dashboard() {
@@ -148,7 +149,9 @@ export default function Dashboard() {
                                     <h4 className="text-lg font-display font-semibold tracking-tight text-text-primary mb-2">
                                         Total Documents
                                     </h4>
-                                    <p className="text-4xl font-mono font-bold text-gradient-primary">{documents.length}</p>
+                                    <p className="text-4xl font-mono font-bold text-gradient-primary">
+                                        <CountUp end={documents.length} duration={1000} />
+                                    </p>
                                     <p className="text-sm text-text-secondary mt-2">
                                         {documents.length === 0 ? 'No documents uploaded yet' : 'Documents in your vault'}
                                     </p>
@@ -171,7 +174,7 @@ export default function Dashboard() {
                                         Categories
                                     </h4>
                                     <p className="text-4xl font-mono font-bold text-gradient-primary">
-                                        {new Set(documents.map(doc => doc.category)).size}
+                                        <CountUp end={new Set(documents.map(doc => doc.category)).size} duration={1000} />
                                     </p>
                                     <p className="text-sm text-text-secondary mt-2">
                                         Document categories

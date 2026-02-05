@@ -31,12 +31,12 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
             width: '8.5in',
             minHeight: '11in',
             margin: '0 auto',
-            padding: '0.75in',
+            padding: '0.6in 0.75in',
             backgroundColor: '#FFFFFF',
             color: '#1F2937',
             fontFamily: 'Inter, sans-serif',
-            fontSize: '11pt',
-            lineHeight: '1.6'
+            fontSize: '10.5pt',
+            lineHeight: '1.5'
         }}>
             {/* Header */}
             <div style={{ marginBottom: '24px', textAlign: 'center', borderBottom: '2px solid #1E3A8A', paddingBottom: '16px' }}>
@@ -91,13 +91,17 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
             </div>
 
             {/* Summary */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{
+                marginBottom: '20px',
+                pageBreakInside: 'avoid',
+                breakInside: 'avoid'
+            }}>
                 <h2 style={{
                     fontFamily: 'Outfit, sans-serif',
-                    fontSize: '14pt',
+                    fontSize: '13pt',
                     fontWeight: 600,
                     color: '#1E3A8A',
-                    margin: '0 0 12px 0',
+                    margin: '0 0 10px 0',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
                     borderBottom: '1.5px solid #0D9488',
@@ -105,7 +109,7 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
                 }}>
                     Summary
                 </h2>
-                <p style={{ margin: '0', fontSize: '11pt', color: '#4B5563', lineHeight: '1.6' }}>
+                <p style={{ margin: '0', fontSize: '10pt', color: '#4B5563', lineHeight: '1.5' }}>
                     {user.bio ? user.bio : (
                         `${user.degree} student at ${user.university} specializing in ${user.branch}. ` +
                         `Experienced in ${internships.length > 0 ? 'professional internships' : 'academic projects'} with ` +
@@ -118,13 +122,17 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
 
 
             {/* Education */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{
+                marginBottom: '20px',
+                pageBreakInside: 'avoid',
+                breakInside: 'avoid'
+            }}>
                 <h2 style={{
                     fontFamily: 'Outfit, sans-serif',
-                    fontSize: '14pt',
+                    fontSize: '13pt',
                     fontWeight: 600,
                     color: '#1E3A8A',
-                    margin: '0 0 12px 0',
+                    margin: '0 0 10px 0',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
                     borderBottom: '1.5px solid #0D9488',
@@ -257,13 +265,17 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
 
             {/* Experience */}
             {internships.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
+                <div style={{
+                    marginBottom: '20px',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid'
+                }}>
                     <h2 style={{
                         fontFamily: 'Outfit, sans-serif',
-                        fontSize: '14pt',
+                        fontSize: '13pt',
                         fontWeight: 600,
                         color: '#1E3A8A',
-                        margin: '0 0 12px 0',
+                        margin: '0 0 10px 0',
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                         borderBottom: '1.5px solid #0D9488',
@@ -272,7 +284,11 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
                         Experience
                     </h2>
                     {internships.slice(0, 3).map((doc, index) => (
-                        <div key={doc._id} style={{ marginBottom: index < Math.min(internships.length, 3) - 1 ? '16px' : '0' }}>
+                        <div key={doc._id} style={{
+                            marginBottom: index < Math.min(internships.length, 3) - 1 ? '12px' : '0',
+                            pageBreakInside: 'avoid',
+                            breakInside: 'avoid'
+                        }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                                 <h3 style={{
                                     fontFamily: 'Outfit, sans-serif',
@@ -313,18 +329,22 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
 
             {/* Badges & Achievements (New) */}
             {badges.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
+                <div style={{
+                    marginBottom: '20px',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid'
+                }}>
                     <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'baseline',
                         borderBottom: '1.5px solid #0D9488',
                         paddingBottom: '4px',
-                        marginBottom: '12px'
+                        marginBottom: '10px'
                     }}>
                         <h2 style={{
                             fontFamily: 'Outfit, sans-serif',
-                            fontSize: '14pt',
+                            fontSize: '13pt',
                             fontWeight: 600,
                             color: '#1E3A8A',
                             margin: '0',
@@ -342,29 +362,40 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
                             // Check if challengeId is populated (object) or just an ID (string)
                             // If populated, use its title or language
                             const challenge = typeof badge.challengeId === 'object' ? badge.challengeId : null;
-                            const title = challenge
-                                ? `${challenge.language ? challenge.language.charAt(0).toUpperCase() + challenge.language.slice(1) : ''} Challenge Completed`
-                                : badge.challengeId ? 'Challenge Completed' : 'Achievement Unlocked';
+                            const challengeTitle = challenge?.title || 'Challenge';
+                            const language = challenge?.language
+                                ? challenge.language.charAt(0).toUpperCase() + challenge.language.slice(1)
+                                : '';
 
                             return (
                                 <div key={index} style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    padding: '6px 12px',
+                                    padding: '8px 12px',
                                     backgroundColor: '#FEF3C7',
                                     borderRadius: '6px',
-                                    border: '1px solid #FCD34D'
+                                    border: '1px solid #FCD34D',
+                                    minWidth: '200px'
                                 }}>
                                     <span style={{ fontSize: '12pt' }}>🏆</span>
-                                    <div>
+                                    <div style={{ flex: 1 }}>
                                         <span style={{
                                             display: 'block',
                                             fontSize: '10pt',
                                             fontWeight: 600,
-                                            color: '#92400E'
+                                            color: '#92400E',
+                                            marginBottom: '2px'
                                         }}>
-                                            {title}
+                                            {language} Challenge
+                                        </span>
+                                        <span style={{
+                                            display: 'block',
+                                            fontSize: '8.5pt',
+                                            color: '#78350F',
+                                            marginBottom: '2px'
+                                        }}>
+                                            {challengeTitle}
                                         </span>
                                         <span style={{
                                             fontSize: '8pt',
@@ -377,18 +408,35 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
                             );
                         })}
                     </div>
+                    <div style={{
+                        marginTop: '12px',
+                        padding: '8px 12px',
+                        backgroundColor: '#F0FDF4',
+                        borderRadius: '6px',
+                        border: '1px solid #86EFAC',
+                        fontSize: '9pt',
+                        color: '#166534',
+                        fontWeight: 500,
+                        textAlign: 'center'
+                    }}>
+                        ✅ {badges.length} {badges.length === 1 ? 'Challenge' : 'Challenges'} Successfully Completed
+                    </div>
                 </div>
             )}
 
             {/* Certifications - Renamed from Skills & Certifications */}
             {certifications.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
+                <div style={{
+                    marginBottom: '20px',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid'
+                }}>
                     <h2 style={{
                         fontFamily: 'Outfit, sans-serif',
-                        fontSize: '14pt',
+                        fontSize: '13pt',
                         fontWeight: 600,
                         color: '#1E3A8A',
-                        margin: '0 0 12px 0',
+                        margin: '0 0 10px 0',
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                         borderBottom: '1.5px solid #0D9488',
@@ -396,32 +444,59 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
                     }}>
                         Certifications
                     </h2>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {certifications.map((doc) => (
-                            <span key={doc._id} style={{
-                                fontSize: '10pt',
-                                color: '#1F2937',
-                                padding: '4px 12px',
-                                backgroundColor: '#F3F4F6',
-                                borderRadius: '4px',
-                                border: '1px solid #E5E7EB'
-                            }}>
-                                {doc.originalName.replace(/\.[^/.]+$/, '')}
-                            </span>
-                        ))}
-                    </div>
+                    {certifications.map((doc, index) => (
+                        <div key={doc._id} style={{
+                            marginBottom: index < certifications.length - 1 ? '10px' : '0',
+                            paddingLeft: '12px',
+                            borderLeft: '2px solid #E5E7EB',
+                            pageBreakInside: 'avoid',
+                            breakInside: 'avoid'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                <span style={{
+                                    fontSize: '10pt',
+                                    fontWeight: 600,
+                                    color: '#1F2937'
+                                }}>
+                                    • {doc.derivedTitle || doc.originalName.replace(/\.[^/.]+$/, '')}
+                                </span>
+                                <span style={{
+                                    fontSize: '9pt',
+                                    color: '#9CA3AF',
+                                    fontFamily: 'JetBrains Mono, monospace',
+                                    marginLeft: '8px'
+                                }}>
+                                    {formatDate(doc.uploadDate)}
+                                </span>
+                            </div>
+                            {doc.derivedDescription && (
+                                <p style={{
+                                    margin: '4px 0 0 12px',
+                                    fontSize: '9pt',
+                                    color: '#6B7280',
+                                    lineHeight: '1.5'
+                                }}>
+                                    {doc.derivedDescription}
+                                </p>
+                            )}
+                        </div>
+                    ))}
                 </div>
             )}
 
             {/* Open Source / Code Projects */}
             {codeProjects.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
+                <div style={{
+                    marginBottom: '20px',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid'
+                }}>
                     <h2 style={{
                         fontFamily: 'Outfit, sans-serif',
-                        fontSize: '14pt',
+                        fontSize: '13pt',
                         fontWeight: 600,
                         color: '#1E3A8A', // Matches other headers
-                        margin: '0 0 12px 0',
+                        margin: '0 0 10px 0',
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                         borderBottom: '1.5px solid #0D9488', // Matches other accents
@@ -430,7 +505,11 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
                         Open Source / Code
                     </h2>
                     {codeProjects.map((project, index) => (
-                        <div key={project._id || index} style={{ marginBottom: index < codeProjects.length - 1 ? '16px' : '0' }}>
+                        <div key={project._id || index} style={{
+                            marginBottom: index < codeProjects.length - 1 ? '12px' : '0',
+                            pageBreakInside: 'avoid',
+                            breakInside: 'avoid'
+                        }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                                 <h3 style={{
                                     fontFamily: 'Outfit, sans-serif',
@@ -482,13 +561,17 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
 
             {/* Document Projects */}
             {projects.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
+                <div style={{
+                    marginBottom: '20px',
+                    pageBreakInside: 'avoid',
+                    breakInside: 'avoid'
+                }}>
                     <h2 style={{
                         fontFamily: 'Outfit, sans-serif',
-                        fontSize: '14pt',
+                        fontSize: '13pt',
                         fontWeight: 600,
                         color: '#1E3A8A',
-                        margin: '0 0 12px 0',
+                        margin: '0 0 10px 0',
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                         borderBottom: '1.5px solid #0D9488',
@@ -498,12 +581,12 @@ const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [],
                     </h2>
                     {projects.slice(0, 3).map((doc, index) => (
                         <div key={doc._id} style={{
-                            marginBottom: index < Math.min(projects.length, 3) - 1 ? '16px' : '0',
+                            marginBottom: index < Math.min(projects.length, 3) - 1 ? '12px' : '0',
                             pageBreakInside: 'avoid',
                             breakInside: 'avoid',
-                            padding: '12px',
+                            padding: '10px',
                             border: '1px solid #E5E7EB',
-                            borderRadius: '8px',
+                            borderRadius: '6px',
                             backgroundColor: '#F9FAFB'
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
