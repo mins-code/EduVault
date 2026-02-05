@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useReactToPrint } from 'react-to-print'
-import { ShieldCheck, FileText, Image as ImageIcon, ExternalLink, Download, GraduationCap, Briefcase, Code, Award, FileDown, Mail, GitBranch, Star, Activity, Sparkles, CheckCircle, Trophy, Code2 } from 'lucide-react'
+import { ShieldCheck, FileText, Image as ImageIcon, ExternalLink, Download, GraduationCap, Briefcase, Code, Award, FileDown, Mail, GitBranch, Star, Activity, Sparkles, CheckCircle, Trophy, Code2, X, Copy } from 'lucide-react'
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import api from '../api'
 import PortfolioPDF from './PortfolioPDF'
@@ -17,6 +17,7 @@ export default function Portfolio() {
     const [viewMode, setViewMode] = useState('list') // 'list' or 'galaxy'
     const [isRecruiter, setIsRecruiter] = useState(false)
     const [emailCopied, setEmailCopied] = useState(false)
+    const [showContactModal, setShowContactModal] = useState(false)
     const resumeRef = useRef()
 
     useEffect(() => {
@@ -243,22 +244,32 @@ export default function Portfolio() {
 
     const handleContact = () => {
         if (!portfolioData?.user) return
+        setShowContactModal(true)
+    }
 
-        const studentEmail = portfolioData.user.email
-        const studentName = portfolioData.user.name
+    const copyToClipboard = async (text, type = 'text') => {
+        try {
+            await navigator.clipboard.writeText(text)
+            // You might want to add a toast here in the future
+            return true
+        } catch (err) {
+            console.error('Failed to copy:', err)
+            return false
+        }
+    }
 
+    const getEmailContent = () => {
+        const studentName = portfolioData?.user?.name || 'Student'
         let companyName = 'Our Company'
         try {
             const recruiterData = JSON.parse(localStorage.getItem('recruiter') || '{}')
             companyName = recruiterData.companyName || 'Our Company'
-        } catch (error) {
-            console.error('Error parsing recruiter data:', error)
-        }
+        } catch (e) { }
 
-        const subject = encodeURIComponent(`Job Opportunity from ${companyName}`)
-        const body = encodeURIComponent(`Hi ${studentName},\n\nI came across your portfolio on EduVault and was impressed by your background.\n\nI'd love to discuss potential opportunities at ${companyName}.\n\nBest regards`)
+        const subject = `Job Opportunity from ${companyName}`
+        const body = `Hi ${studentName},\n\nI came across your portfolio on EduVault and was impressed by your background.\n\nI'd love to discuss potential opportunities at ${companyName}.\n\nBest regards`
 
-        window.location.href = `mailto:${studentEmail}?subject=${subject}&body=${body}`
+        return { subject, body, email: portfolioData?.user?.email }
     }
 
     if (loading) {
@@ -947,6 +958,93 @@ export default function Portfolio() {
                 <FileDown className="w-5 h-5" />
                 <span className="text-sm">Download Full Portfolio (PDF)</span>
             </button>
+
+            {/* Contact Modal */}
+            {showContactModal && portfolioData?.user && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-surface-1 border border-border-subtle rounded-vault-lg shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-border-subtle flex items-center justify-between bg-surface-2/30">
+                            <h3 className="text-xl font-bold text-text-primary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                                <Mail className="w-5 h-5 text-accent-cyan" />
+                                Contact Candidate
+                            </h3>
+                            <button
+                                onClick={() => setShowContactModal(false)}
+                                className="text-text-muted hover:text-white transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            {/* Email Address */}
+                            <div>
+                                <label className="text-xs font-mono text-text-muted mb-2 block uppercase tracking-wider">To</label>
+                                <div className="flex items-center gap-2 p-3 bg-surface-2 rounded-vault border border-border-subtle group hover:border-accent-cyan/50 transition-colors">
+                                    <span className="flex-1 text-text-primary font-mono text-sm">{portfolioData.user.email}</span>
+                                    <button
+                                        onClick={() => copyToClipboard(portfolioData.user.email)}
+                                        className="p-2 hover:bg-white/10 rounded-md text-text-muted hover:text-accent-cyan transition-colors"
+                                        title="Copy Email"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Subject & Body Preview */}
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-mono text-text-muted mb-2 block uppercase tracking-wider">Subject</label>
+                                    <div className="p-3 bg-surface-2 rounded-vault border border-border-subtle text-text-secondary text-sm">
+                                        {getEmailContent().subject}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-mono text-text-muted mb-2 block uppercase tracking-wider">Message Preview</label>
+                                    <div className="p-3 bg-surface-2 rounded-vault border border-border-subtle text-text-secondary text-sm whitespace-pre-wrap h-32 overflow-y-auto custom-scrollbar">
+                                        {getEmailContent().body}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                <button
+                                    onClick={() => {
+                                        const { email, subject, body } = getEmailContent()
+                                        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank')
+                                    }}
+                                    className="flex items-center justify-center gap-2 p-3 rounded-vault bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-all font-medium"
+                                >
+                                    <Mail className="w-4 h-4" />
+                                    Open in Gmail
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const { email, subject, body } = getEmailContent()
+                                        window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+                                    }}
+                                    className="flex items-center justify-center gap-2 p-3 rounded-vault bg-surface-2 text-text-primary hover:bg-surface-3 border border-border-subtle transition-all font-medium"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    Default Mail App
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const { body } = getEmailContent()
+                                        copyToClipboard(body)
+                                    }}
+                                    className="col-span-full flex items-center justify-center gap-2 p-3 rounded-vault bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg hover:shadow-cyan-500/20 transition-all font-bold"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                    Copy Message to Clipboard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
                 {portfolioData && (
