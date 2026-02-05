@@ -33,11 +33,13 @@ export default function Portfolio() {
                 setPortfolioData(response.data)
                 console.log('👤 Portfolio user data:', response.data.user)
                 // Fetch projects for this user
-                if (response.data.user?._id) {
-                    console.log('✅ User ID found, fetching projects...')
+                // Use projects from portfolio response (already filtered for public)
+                if (response.data.projects) {
+                    setCodeProjects(response.data.projects)
+                    console.log('✅ Public projects loaded:', response.data.projects.length)
+                } else if (response.data.user?._id) {
+                    console.log('⚠️ No projects in response, falling back to fetch...')
                     fetchProjects(response.data.user._id)
-                } else {
-                    console.error('❌ No user ID found in portfolio data')
                 }
             }
         } catch (error) {
@@ -952,6 +954,7 @@ export default function Portfolio() {
                         ref={resumeRef}
                         user={portfolioData.user}
                         documents={portfolioData.documents}
+                        projects={portfolioData.projects || []}
                     />
                 )}
             </div>

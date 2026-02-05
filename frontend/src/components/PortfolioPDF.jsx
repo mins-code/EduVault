@@ -1,11 +1,12 @@
 import { forwardRef } from 'react'
 
-const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
+const PortfolioPDF = forwardRef(({ user, documents, projects = [] }, ref) => {
     // Filter documents by category
     const academics = documents.filter(doc => doc.category === 'Academics')
     const internships = documents.filter(doc => doc.category === 'Internships')
-    const projects = documents.filter(doc => doc.category === 'Projects')
+    const documentProjects = documents.filter(doc => doc.category === 'Projects')
     const certifications = documents.filter(doc => doc.category === 'Certifications')
+    // GitHub projects are passed separately as 'projects' prop
 
     const formatDate = (dateString) => {
         const date = new Date(dateString)
@@ -148,21 +149,21 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                             color: '#94A3B8',
                             margin: '6px 0 0 0'
                         }}>
-                            Projects
+                            GitHub Projects
                         </p>
                     </div>
                 </div>
 
+                {/* Bio */}
                 {user.bio && (
                     <p style={{
                         fontSize: '12pt',
                         color: '#CBD5E1',
-                        margin: '0 0 32px 0',
+                        margin: '32px auto 0 auto',
                         maxWidth: '80%',
-                        marginLeft: 'auto',
-                        marginRight: 'auto',
                         lineHeight: '1.6',
-                        fontFamily: 'Inter, sans-serif'
+                        fontFamily: 'Inter, sans-serif',
+                        textAlign: 'center'
                     }}>
                         {user.bio}
                     </p>
@@ -175,7 +176,7 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                         flexWrap: 'wrap',
                         justifyContent: 'center',
                         gap: '10px',
-                        marginBottom: '40px',
+                        marginTop: '24px',
                         maxWidth: '90%',
                         marginLeft: 'auto',
                         marginRight: 'auto'
@@ -239,7 +240,9 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                             border: '1px solid #E5E7EB',
                             borderRadius: '8px',
                             backgroundColor: '#F9FAFB',
-                            position: 'relative'
+                            position: 'relative',
+                            pageBreakInside: 'avoid',
+                            breakInside: 'avoid'
                         }}>
                             {/* Verified Badge */}
                             <div style={{
@@ -294,10 +297,20 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                                         fontSize: '13pt',
                                         fontWeight: 500,
                                         color: '#1F2937',
-                                        margin: '0 0 4px 0'
+                                        margin: '0 0 6px 0'
                                     }}>
-                                        {doc.originalName.replace(/\.[^/.]+$/, '')}
+                                        {doc.derivedTitle || doc.originalName.replace(/\.[^/.]+$/, '')}
                                     </h3>
+                                    {doc.derivedDescription && (
+                                        <p style={{
+                                            fontSize: '10pt',
+                                            color: '#4B5563',
+                                            margin: '0 0 6px 0',
+                                            lineHeight: '1.4'
+                                        }}>
+                                            {doc.derivedDescription}
+                                        </p>
+                                    )}
                                     <p style={{
                                         fontSize: '9pt',
                                         color: '#6B7280',
@@ -313,8 +326,8 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                 </div>
             )}
 
-            {/* Projects Section */}
-            {projects.length > 0 && (
+            {/* Document Projects Section */}
+            {documentProjects.length > 0 && (
                 <div style={{
                     padding: '40px 60px',
                     backgroundColor: '#F9FAFB'
@@ -327,7 +340,7 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                         margin: '0 0 32px 0',
                         textAlign: 'center'
                     }}>
-                        Projects Portfolio
+                        Document Projects
                     </h2>
 
                     <div style={{
@@ -335,13 +348,15 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                         gridTemplateColumns: 'repeat(2, 1fr)',
                         gap: '20px'
                     }}>
-                        {projects.map((doc) => (
+                        {documentProjects.map((doc) => (
                             <div key={doc._id} style={{
                                 padding: '18px',
                                 border: '2px solid #E5E7EB',
                                 borderRadius: '10px',
                                 backgroundColor: '#FFFFFF',
-                                position: 'relative'
+                                position: 'relative',
+                                pageBreakInside: 'avoid',
+                                breakInside: 'avoid'
                             }}>
                                 {/* Verified Badge */}
                                 <div style={{
@@ -380,12 +395,24 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                                     fontSize: '11pt',
                                     fontWeight: 500,
                                     color: '#1F2937',
-                                    margin: '0 0 10px 0',
-                                    lineHeight: '1.4',
-                                    minHeight: '40px'
+                                    margin: '0 0 8px 0',
+                                    lineHeight: '1.4'
                                 }}>
-                                    {doc.originalName.replace(/\.[^/.]+$/, '')}
+                                    {doc.derivedTitle || doc.originalName.replace(/\.[^/.]+$/, '')}
                                 </h3>
+
+                                {doc.derivedDescription && (
+                                    <p style={{
+                                        fontSize: '9pt',
+                                        color: '#4B5563',
+                                        margin: '0 0 8px 0',
+                                        lineHeight: '1.4'
+                                    }}>
+                                        {doc.derivedDescription.length > 80
+                                            ? doc.derivedDescription.substring(0, 80) + '...'
+                                            : doc.derivedDescription}
+                                    </p>
+                                )}
 
                                 <p style={{
                                     fontSize: '8pt',
@@ -428,7 +455,9 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                                 border: '2px solid #E5E7EB',
                                 borderRadius: '10px',
                                 backgroundColor: '#FFFFFF',
-                                position: 'relative'
+                                position: 'relative',
+                                pageBreakInside: 'avoid',
+                                breakInside: 'avoid'
                             }}>
                                 {/* Verified Badge */}
                                 <div style={{
@@ -467,12 +496,24 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                                     fontSize: '11pt',
                                     fontWeight: 500,
                                     color: '#1F2937',
-                                    margin: '0 0 10px 0',
-                                    lineHeight: '1.4',
-                                    minHeight: '40px'
+                                    margin: '0 0 8px 0',
+                                    lineHeight: '1.4'
                                 }}>
-                                    {doc.originalName.replace(/\.[^/.]+$/, '')}
+                                    {doc.derivedTitle || doc.originalName.replace(/\.[^/.]+$/, '')}
                                 </h3>
+
+                                {doc.derivedDescription && (
+                                    <p style={{
+                                        fontSize: '9pt',
+                                        color: '#4B5563',
+                                        margin: '0 0 8px 0',
+                                        lineHeight: '1.4'
+                                    }}>
+                                        {doc.derivedDescription.length > 80
+                                            ? doc.derivedDescription.substring(0, 80) + '...'
+                                            : doc.derivedDescription}
+                                    </p>
+                                )}
 
                                 <div style={{
                                     display: 'flex',
@@ -496,6 +537,140 @@ const PortfolioPDF = forwardRef(({ user, documents }, ref) => {
                                         Size: {formatFileSize(doc.fileSize)}
                                     </p>
                                 </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* GitHub Projects Section */}
+            {projects.length > 0 && (
+                <div style={{
+                    padding: '40px 60px',
+                    backgroundColor: '#F0FDFA'
+                }}>
+                    <h2 style={{
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: '24pt',
+                        fontWeight: 600,
+                        color: '#0E7490',
+                        margin: '0 0 32px 0',
+                        textAlign: 'center'
+                    }}>
+                        Open Source / Code
+                    </h2>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gap: '20px'
+                    }}>
+                        {projects.map((project) => (
+                            <div key={project._id} style={{
+                                padding: '18px',
+                                border: '2px solid #06B6D4',
+                                borderRadius: '10px',
+                                backgroundColor: '#FFFFFF',
+                                position: 'relative',
+                                pageBreakInside: 'avoid',
+                                breakInside: 'avoid'
+                            }}>
+                                {/* GitHub Icon */}
+                                <div style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '8px',
+                                    background: 'linear-gradient(135deg, #06B6D4, #0891B2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '12px'
+                                }}>
+                                    <span style={{ fontSize: '20pt' }}>🔧</span>
+                                </div>
+
+                                {/* Project Title */}
+                                <h3 style={{
+                                    fontFamily: 'Outfit, sans-serif',
+                                    fontSize: '11pt',
+                                    fontWeight: 600,
+                                    color: '#0E7490',
+                                    margin: '0 0 6px 0',
+                                    lineHeight: '1.3'
+                                }}>
+                                    {project.title}
+                                </h3>
+
+                                {/* Description */}
+                                {project.description && (
+                                    <p style={{
+                                        fontSize: '9pt',
+                                        color: '#164E63',
+                                        margin: '0 0 10px 0',
+                                        lineHeight: '1.4'
+                                    }}>
+                                        {project.description.length > 70
+                                            ? project.description.substring(0, 70) + '...'
+                                            : project.description}
+                                    </p>
+                                )}
+
+                                {/* Tags */}
+                                {project.tags && project.tags.length > 0 && (
+                                    <div style={{
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: '6px',
+                                        marginBottom: '10px'
+                                    }}>
+                                        {project.tags.slice(0, 3).map((tag, index) => (
+                                            <span key={index} style={{
+                                                padding: '3px 8px',
+                                                background: '#CFFAFE',
+                                                border: '1px solid #06B6D4',
+                                                borderRadius: '4px',
+                                                color: '#0E7490',
+                                                fontSize: '7pt',
+                                                fontWeight: 500,
+                                                fontFamily: 'JetBrains Mono, monospace'
+                                            }}>
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Stats */}
+                                <div style={{
+                                    display: 'flex',
+                                    gap: '12px',
+                                    marginBottom: '8px'
+                                }}>
+                                    <div style={{
+                                        fontSize: '8pt',
+                                        color: '#0E7490',
+                                        fontFamily: 'JetBrains Mono, monospace'
+                                    }}>
+                                        ⭐ {project.stats?.stars || 0}
+                                    </div>
+                                    <div style={{
+                                        fontSize: '8pt',
+                                        color: '#0E7490',
+                                        fontFamily: 'JetBrains Mono, monospace'
+                                    }}>
+                                        🔀 {project.stats?.forks || 0}
+                                    </div>
+                                </div>
+
+                                {/* Last Updated */}
+                                <p style={{
+                                    fontSize: '7pt',
+                                    color: '#64748B',
+                                    margin: '0',
+                                    fontFamily: 'JetBrains Mono, monospace'
+                                }}>
+                                    Updated: {project.stats?.lastCommit ? formatDate(project.stats.lastCommit) : 'N/A'}
+                                </p>
                             </div>
                         ))}
                     </div>

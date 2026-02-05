@@ -419,4 +419,57 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
+// @route   PATCH /api/projects/:id/visibility
+// @desc    Toggle project visibility (public/private)
+// @access  Private
+router.patch('/:id/visibility', auth, async (req, res) => {
+    try {
+        const userId = req.user.userId || req.user.id;
+        const { id } = req.params;
+        const { isPublic } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID not found in token'
+            });
+        }
+
+        // Find and verify ownership
+        const project = await Project.findById(id);
+
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: 'Project not found'
+            });
+        }
+
+        if (project.userId.toString() !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to modify this project'
+            });
+        }
+
+        // Update visibility
+        project.isPublic = isPublic;
+        await project.save();
+
+        console.log(`👁️  Project visibility updated: ${project.title} - ${isPublic ? 'Public' : 'Private'}`);
+
+        res.json({
+            success: true,
+            message: 'Project visibility updated',
+            project
+        });
+    } catch (error) {
+        console.error('Project visibility update error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating project visibility'
+        });
+    }
+});
+
 module.exports = router;

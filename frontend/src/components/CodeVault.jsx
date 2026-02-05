@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { GitBranch, Plus, Star, Activity, Trash2, ExternalLink, RefreshCw } from 'lucide-react'
+import { GitBranch, Plus, Star, Activity, Trash2, ExternalLink, RefreshCw, Eye, EyeOff } from 'lucide-react'
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
@@ -10,6 +10,7 @@ export default function CodeVault() {
     const [loading, setLoading] = useState(true)
     const [githubLink, setGithubLink] = useState('')
     const [adding, setAdding] = useState(false)
+    const [toast, setToast] = useState(null)
 
     useEffect(() => {
         fetchProjects()
@@ -58,6 +59,31 @@ export default function CodeVault() {
         } catch (error) {
             console.error('Delete project error:', error)
             alert('Failed to delete project')
+        }
+    }
+
+    const handleToggleVisibility = async (id, currentVisibility) => {
+        try {
+            const response = await api.patch(`/api/projects/${id}/visibility`, {
+                isPublic: !currentVisibility
+            })
+            if (response.data.success) {
+                setProjects(projects.map(p =>
+                    p._id === id ? { ...p, isPublic: !currentVisibility } : p
+                ))
+
+                // Show toast notification
+                const newStatus = !currentVisibility
+                setToast({
+                    message: newStatus ? '✅ Now publicly visible on portfolio' : '🔒 Hidden from portfolio',
+                    type: newStatus ? 'success' : 'info'
+                })
+                setTimeout(() => setToast(null), 3000)
+            }
+        } catch (error) {
+            console.error('Toggle visibility error:', error)
+            setToast({ message: '❌ Failed to update visibility', type: 'error' })
+            setTimeout(() => setToast(null), 3000)
         }
     }
 
@@ -188,6 +214,16 @@ export default function CodeVault() {
                                                     </div>
                                                     <div className="flex gap-2 flex-shrink-0">
                                                         <button
+                                                            onClick={() => handleToggleVisibility(project._id, project.isPublic)}
+                                                            className={`p-2 rounded-lg transition-all ${project.isPublic
+                                                                ? 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20'
+                                                                : 'bg-slate-700/50 text-slate-500 hover:bg-slate-700'
+                                                                }`}
+                                                            title={project.isPublic ? 'Public (Click to make private)' : 'Private (Click to make public)'}
+                                                        >
+                                                            {project.isPublic ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                                        </button>
+                                                        <button
                                                             onClick={async () => {
                                                                 try {
                                                                     const btn = document.getElementById(`sync-${project._id}`)
@@ -313,6 +349,18 @@ export default function CodeVault() {
                         )}
                     </div>
                 </main>
+
+                {/* Toast Notification */}
+                {toast && (
+                    <div className="fixed top-24 right-8 z-50">
+                        <div className={`px-6 py-3 rounded-lg shadow-lg border-2 transition-all ${toast.type === 'success' ? 'bg-cyan-500/10 border-cyan-500/50 text-cyan-400' :
+                                toast.type === 'error' ? 'bg-red-500/10 border-red-500/50 text-red-400' :
+                                    'bg-slate-700/90 border-slate-600 text-slate-300'
+                            }`}>
+                            <p className="text-sm font-medium">{toast.message}</p>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

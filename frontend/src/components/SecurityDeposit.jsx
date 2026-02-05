@@ -468,13 +468,11 @@ export default function SecurityDeposit() {
                                                 </div>
                                             </div>
                                             <h5 className="text-2xl font-display font-semibold tracking-tight text-text-primary">
-                                                {isExtracting ? '📄 Extracting PDF Content...' : 'Encrypting and Vaulting to Cloud...'}
+                                                Uploading to Cloud...
                                             </h5>
-                                            {isExtracting && (
-                                                <p className="text-sm text-text-muted" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                                                    Reading document to extract title & description
-                                                </p>
-                                            )}
+                                            <p className="text-sm text-text-muted" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+                                                Securing your document
+                                            </p>
                                             <div className="max-w-md mx-auto">
                                                 <div className="h-2 bg-surface-1 rounded-full overflow-hidden">
                                                     <div
@@ -488,7 +486,7 @@ export default function SecurityDeposit() {
                                                     />
                                                 </div>
                                                 <p className="text-sm font-mono text-text-secondary mt-3">
-                                                    {isExtracting ? 'Extracting...' : `${uploadProgress}%`}
+                                                    {uploadProgress}%
                                                 </p>
                                             </div>
                                         </div>

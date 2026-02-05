@@ -45,7 +45,15 @@ router.get('/:username', async (req, res) => {
             isPublic: true  // Only show documents marked as public
         }).sort({ uploadDate: -1 });
 
+        // Fetch only PUBLIC projects for this user's portfolio
+        const projects = await Project.find({
+            userId: user._id,
+            isPublic: true  // Only show projects marked as public
+        }).sort({ createdAt: -1 });
+
         console.log(`📊 Portfolio for ${username}: ${documents.length} public documents`);
+        console.log(`📂 Public projects request for userId: ${user._id}`);
+        console.log(`📊 Found ${projects.length} projects for user ${user._id}`);
 
         // === SKILL VERIFICATION STATS ===
         const skillStats = {};
@@ -229,7 +237,20 @@ router.get('/:username', async (req, res) => {
                 fileSize: doc.fileSize,
                 uploadDate: doc.uploadDate,
                 hasCloudStorage: !!doc.cloudinaryPublicId,
-                isPublic: doc.isPublic
+                isPublic: doc.isPublic,
+                derivedTitle: doc.derivedTitle,
+                derivedDescription: doc.derivedDescription
+            })),
+            projects: projects.map(proj => ({
+                _id: proj._id,
+                title: proj.title,
+                description: proj.description,
+                githubLink: proj.githubLink,
+                tags: proj.tags,
+                stats: proj.stats,
+                activityGraph: proj.activityGraph,
+                createdAt: proj.createdAt,
+                isPublic: proj.isPublic
             }))
         });
 
