@@ -10,6 +10,7 @@ import api from '../api'
 export default function Dashboard() {
     const [userData, setUserData] = useState(null)
     const [documents, setDocuments] = useState([])
+    const [codeProjects, setCodeProjects] = useState([])
     const [userId, setUserId] = useState(null)
     const resumeRef = useRef()
 
@@ -24,7 +25,9 @@ export default function Dashboard() {
                 if (uid) {
                     setUserId(uid)
                     setUserData(userData)
+                    fetchUserProfile() // Fetch fresh data
                     fetchDocuments(uid)
+                    fetchCodeProjects(uid)
                 } else {
                     console.error('No userId found in localStorage')
                 }
@@ -33,6 +36,17 @@ export default function Dashboard() {
             }
         }
     }, [])
+
+    const fetchUserProfile = async () => {
+        try {
+            const response = await api.get('/api/auth/profile')
+            if (response.data.success) {
+                setUserData(response.data.user)
+            }
+        } catch (error) {
+            console.error('Profile fetch error:', error)
+        }
+    }
 
     const fetchDocuments = async (uid) => {
         try {
@@ -44,6 +58,17 @@ export default function Dashboard() {
             }
         } catch (error) {
             console.error('❌ Dashboard fetch error:', error)
+        }
+    }
+
+    const fetchCodeProjects = async (uid) => {
+        try {
+            const response = await api.get(`/api/projects/user/${uid}`)
+            if (response.data.success) {
+                setCodeProjects(response.data.projects)
+            }
+        } catch (error) {
+            console.error('Code Projects fetch error:', error)
         }
     }
 
@@ -417,6 +442,9 @@ export default function Dashboard() {
                             graduationYear: userData.graduationYear
                         }}
                         documents={documents}
+                        codeProjects={codeProjects}
+                        skills={userData.skills || []}
+                        badges={userData.challengeBadges || []}
                     />
                 )}
             </div>

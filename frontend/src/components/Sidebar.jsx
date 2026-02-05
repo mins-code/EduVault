@@ -40,14 +40,14 @@ export default function Sidebar() {
                         <Shield className="w-7 h-7 text-white" strokeWidth={2.5} />
                     </div>
                     <h1 className="text-3xl font-display font-bold tracking-tight" style={{
-                        background: 'linear-gradient(135deg, #67E8F9 0%, #5EEAD4 50%, #C4B5FD 100%)',
+                        background: 'linear-gradient(135deg, #2DD4BF 0%, #38BDF8 100%)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                         backgroundClip: 'text',
                         textShadow: 'none',
                         fontFamily: 'Outfit, sans-serif',
                         letterSpacing: '-0.02em',
-                        filter: 'drop-shadow(0 0 8px rgba(94, 234, 212, 0.2))'
+                        filter: 'drop-shadow(0 0 8px rgba(45, 212, 191, 0.3))'
                     }}>
                         EduVault
                     </h1>

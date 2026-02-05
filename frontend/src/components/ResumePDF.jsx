@@ -1,11 +1,19 @@
 import { forwardRef } from 'react'
 
-const ResumePDF = forwardRef(({ user, documents }, ref) => {
+const ResumePDF = forwardRef(({ user, documents, skills = [], codeProjects = [], badges = [] }, ref) => {
     // Filter documents by category AND isPublic status
     const academics = documents.filter(doc => doc.category === 'Academics')
     const internships = documents.filter(doc => doc.category === 'Internships' && doc.isPublic)
     const projects = documents.filter(doc => doc.category === 'Projects' && doc.isPublic)
     const certifications = documents.filter(doc => doc.category === 'Certifications' && doc.isPublic)
+
+    // Helper to check if skills are objects with levels
+    const isStructuredSkills = skills.length > 0 && typeof skills[0] === 'object'
+
+    // Group skills by level (if structured)
+    const expertSkills = isStructuredSkills ? skills.filter(s => s.level === 'Expert' || s.level === 'Advanced') : []
+    const intermediateSkills = isStructuredSkills ? skills.filter(s => s.level === 'Intermediate') : []
+    const beginnerSkills = isStructuredSkills ? skills.filter(s => s.level === 'Beginner') : []
 
     const formatDate = (dateString) => {
         const date = new Date(dateString)
@@ -107,39 +115,7 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                 </p>
             </div>
 
-            {/* Technical Skills */}
-            {user.skills && user.skills.length > 0 && (
-                <div style={{ marginBottom: '24px' }}>
-                    <h2 style={{
-                        fontFamily: 'Outfit, sans-serif',
-                        fontSize: '14pt',
-                        fontWeight: 600,
-                        color: '#1E3A8A',
-                        margin: '0 0 12px 0',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        borderBottom: '1.5px solid #0D9488',
-                        paddingBottom: '4px'
-                    }}>
-                        Technical Skills
-                    </h2>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {user.skills.map((skill, index) => (
-                            <span key={index} style={{
-                                fontSize: '10pt',
-                                color: '#0369A1',
-                                padding: '4px 12px',
-                                backgroundColor: '#E0F2FE',
-                                borderRadius: '4px',
-                                border: '1px solid #BAE6FD',
-                                fontWeight: 500
-                            }}>
-                                {skill}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
+
 
             {/* Education */}
             <div style={{ marginBottom: '24px' }}>
@@ -181,6 +157,62 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                         {user.degree} in {user.branch}
                     </p>
                 </div>
+
+                {/* Skills Section (Dynamic) */}
+                {skills.length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                        <p style={{
+                            fontSize: '10pt',
+                            fontWeight: 600,
+                            color: '#1F2937',
+                            margin: '0 0 4px 0',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.3px'
+                        }}>
+                            Technical Skills
+                        </p>
+                        <div style={{ fontSize: '10pt', color: '#4B5563' }}>
+                            {isStructuredSkills ? (
+                                <>
+                                    {expertSkills.length > 0 && (
+                                        <div style={{ marginBottom: '4px' }}>
+                                            <span style={{ fontWeight: 600 }}>Expert: </span>
+                                            {expertSkills.map(s => s.name).join(', ')}
+                                        </div>
+                                    )}
+                                    {intermediateSkills.length > 0 && (
+                                        <div style={{ marginBottom: '4px' }}>
+                                            <span style={{ fontWeight: 600 }}>Intermediate: </span>
+                                            {intermediateSkills.map(s => s.name).join(', ')}
+                                        </div>
+                                    )}
+                                    {beginnerSkills.length > 0 && (
+                                        <div>
+                                            <span style={{ fontWeight: 600 }}>Familiar: </span>
+                                            {beginnerSkills.map(s => s.name).join(', ')}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {skills.map((skill, index) => (
+                                        <span key={index} style={{
+                                            fontSize: '10pt',
+                                            color: '#0369A1',
+                                            padding: '2px 10px',
+                                            backgroundColor: '#E0F2FE',
+                                            borderRadius: '4px',
+                                            border: '1px solid #BAE6FD',
+                                            fontWeight: 500
+                                        }}>
+                                            {typeof skill === 'string' ? skill : skill.name}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Academic Documents (Marksheets, etc.) */}
                 {academics.length > 0 && (
@@ -279,6 +311,75 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                 </div>
             )}
 
+            {/* Badges & Achievements (New) */}
+            {badges.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'baseline',
+                        borderBottom: '1.5px solid #0D9488',
+                        paddingBottom: '4px',
+                        marginBottom: '12px'
+                    }}>
+                        <h2 style={{
+                            fontFamily: 'Outfit, sans-serif',
+                            fontSize: '14pt',
+                            fontWeight: 600,
+                            color: '#1E3A8A',
+                            margin: '0',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                        }}>
+                            Badges & Achievements
+                        </h2>
+                        <span style={{ fontSize: '10pt', color: '#6B7280', fontWeight: 500 }}>
+                            {badges.length} {badges.length === 1 ? 'Badge' : 'Badges'} Earned
+                        </span>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                        {badges.map((badge, index) => {
+                            // Check if challengeId is populated (object) or just an ID (string)
+                            // If populated, use its title or language
+                            const challenge = typeof badge.challengeId === 'object' ? badge.challengeId : null;
+                            const title = challenge
+                                ? `${challenge.language ? challenge.language.charAt(0).toUpperCase() + challenge.language.slice(1) : ''} Challenge Completed`
+                                : badge.challengeId ? 'Challenge Completed' : 'Achievement Unlocked';
+
+                            return (
+                                <div key={index} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 12px',
+                                    backgroundColor: '#FEF3C7',
+                                    borderRadius: '6px',
+                                    border: '1px solid #FCD34D'
+                                }}>
+                                    <span style={{ fontSize: '12pt' }}>🏆</span>
+                                    <div>
+                                        <span style={{
+                                            display: 'block',
+                                            fontSize: '10pt',
+                                            fontWeight: 600,
+                                            color: '#92400E'
+                                        }}>
+                                            {title}
+                                        </span>
+                                        <span style={{
+                                            fontSize: '8pt',
+                                            color: '#B45309'
+                                        }}>
+                                            {formatDate(badge.awardedAt)}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Certifications - Renamed from Skills & Certifications */}
             {certifications.length > 0 && (
                 <div style={{ marginBottom: '24px' }}>
@@ -312,7 +413,74 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                 </div>
             )}
 
-            {/* Projects */}
+            {/* Open Source / Code Projects */}
+            {codeProjects.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                    <h2 style={{
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: '14pt',
+                        fontWeight: 600,
+                        color: '#1E3A8A', // Matches other headers
+                        margin: '0 0 12px 0',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        borderBottom: '1.5px solid #0D9488', // Matches other accents
+                        paddingBottom: '4px'
+                    }}>
+                        Open Source / Code
+                    </h2>
+                    {codeProjects.map((project, index) => (
+                        <div key={project._id || index} style={{ marginBottom: index < codeProjects.length - 1 ? '16px' : '0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                <h3 style={{
+                                    fontFamily: 'Outfit, sans-serif',
+                                    fontSize: '12pt',
+                                    fontWeight: 500,
+                                    color: '#1F2937', // Matches other titles
+                                    margin: '0'
+                                }}>
+                                    {project.title}
+                                </h3>
+                                <div style={{ display: 'flex', gap: '8px', fontSize: '9pt' }}>
+                                    {project.githubLink && (
+                                        <a href={project.githubLink} style={{ color: '#0D9488', textDecoration: 'none' }}>
+                                            View Code
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                            {project.description && (
+                                <p style={{
+                                    margin: '4px 0 6px 0',
+                                    fontSize: '10pt',
+                                    color: '#4B5563',
+                                    lineHeight: '1.5'
+                                }}>
+                                    {project.description}
+                                </p>
+                            )}
+                            {project.tags && project.tags.length > 0 && (
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {project.tags.map(tag => (
+                                        <span key={tag} style={{
+                                            fontSize: '8pt',
+                                            padding: '2px 8px',
+                                            backgroundColor: '#CFFAFE',
+                                            color: '#155E75',
+                                            borderRadius: '999px',
+                                            fontFamily: 'JetBrains Mono, monospace'
+                                        }}>
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Document Projects */}
             {projects.length > 0 && (
                 <div style={{ marginBottom: '24px' }}>
                     <h2 style={{
@@ -326,38 +494,58 @@ const ResumePDF = forwardRef(({ user, documents }, ref) => {
                         borderBottom: '1.5px solid #0D9488',
                         paddingBottom: '4px'
                     }}>
-                        Projects
+                        Document Projects
                     </h2>
                     {projects.slice(0, 3).map((doc, index) => (
-                        <div key={doc._id} style={{ marginBottom: index < Math.min(projects.length, 3) - 1 ? '12px' : '0' }}>
+                        <div key={doc._id} style={{
+                            marginBottom: index < Math.min(projects.length, 3) - 1 ? '16px' : '0',
+                            pageBreakInside: 'avoid',
+                            breakInside: 'avoid',
+                            padding: '12px',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '8px',
+                            backgroundColor: '#F9FAFB'
+                        }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                                 <h3 style={{
                                     fontFamily: 'Outfit, sans-serif',
                                     fontSize: '11pt',
-                                    fontWeight: 500,
+                                    fontWeight: 600,
                                     color: '#1F2937',
-                                    margin: '0'
+                                    margin: '0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
                                 }}>
+                                    <span style={{
+                                        color: '#0D9488',
+                                        fontSize: '10pt',
+                                        opacity: 0.8,
+                                        fontFamily: 'JetBrains Mono, monospace'
+                                    }}>
+                                        {(index + 1).toString().padStart(2, '0')}.
+                                    </span>
                                     {doc.derivedTitle || doc.originalName.replace(/\.[^/.]+$/, '')}
                                 </h3>
                                 <span style={{
-                                    fontSize: '10pt',
+                                    fontSize: '9pt',
                                     color: '#6B7280',
-                                    fontFamily: 'JetBrains Mono, monospace'
+                                    fontFamily: 'JetBrains Mono, monospace',
+                                    backgroundColor: '#FFFFFF',
+                                    padding: '2px 8px',
+                                    borderRadius: '4px',
+                                    border: '1px solid #E5E7EB'
                                 }}>
                                     {formatDate(doc.uploadDate)}
                                 </span>
                             </div>
                             <p style={{
-                                margin: '4px 0 0 0',
+                                margin: '8px 0 0 0',
                                 fontSize: '10pt',
                                 color: doc.derivedDescription ? '#4B5563' : '#6B7280',
-                                lineHeight: '1.4',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                                fontFamily: doc.derivedDescription ? 'Inter, sans-serif' : 'inherit'
+                                lineHeight: '1.5',
+                                fontFamily: doc.derivedDescription ? 'Inter, sans-serif' : 'inherit',
+                                paddingLeft: '32px' // Indent description to align with title text (skipping number)
                             }}>
                                 {doc.derivedDescription || 'Project documentation and details available in verified digital portfolio.'}
                             </p>

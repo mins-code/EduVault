@@ -177,8 +177,13 @@ router.get('/profile', auth, async (req, res) => {
     try {
         const userId = req.user.userId;
 
-        // Find user and exclude password
-        const user = await User.findById(userId).select('-password');
+        // Find user, exclude password, and populate challenges
+        const user = await User.findById(userId)
+            .select('-password')
+            .populate({
+                path: 'challengeBadges.challengeId',
+                select: 'title language difficulty'
+            });
 
         if (!user) {
             return res.status(404).json({
