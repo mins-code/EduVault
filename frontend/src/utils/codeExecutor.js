@@ -3,6 +3,8 @@
  * Free alternative to Judge0 - runs JavaScript in browser
  */
 
+import api from '../api'
+
 /**
  * Execute code locally in browser
  * @param {string} code - User's code
@@ -11,26 +13,70 @@
  * @returns {Promise<Object>} Execution results
  */
 export async function executeCode(code, testCases, language = 'javascript') {
-    // Simulate execution for non-JS languages (demo mode)
+    // For non-JS languages, use backend Piston API
     if (language !== 'javascript') {
-        console.log(`⚠️ [LOCAL] Simulating execution for ${language}...`)
-        return {
-            results: testCases.map(tc => ({
-                testName: tc.description,
-                input: tc.input,
-                expectedOutput: tc.expectedOutput,
-                actualOutput: tc.expectedOutput, // Simulate pass
-                passed: true,
-                statusId: 3,
-                statusDescription: 'Accepted (Simulated)',
-                time: '0.05',
+        console.log(`🚀 [BACKEND] Executing ${language} code via Piston API...`)
+
+        try {
+            const startTime = Date.now()
+
+            // Make API call to backend
+            const response = await api.post('/api/execute', {
+                code,
+                language,
+                testCases
+            })
+
+            const { results, passed, passedTests, totalTests, executionTime } = response.data
+
+            console.log(`✅ [BACKEND] Execution complete: ${passedTests}/${totalTests} passed`)
+
+            // Format results to match UI expectations
+            const formattedResults = results.map((result, index) => ({
+                testName: testCases[index]?.description || `Test Case ${result.testCase}`,
+                input: result.input,
+                expectedOutput: result.expectedOutput,
+                actualOutput: result.actualOutput,
+                passed: result.passed,
+                statusId: result.passed ? 3 : (result.error ? 7 : 4),
+                statusDescription: result.error
+                    ? 'Runtime Error'
+                    : (result.passed ? 'Accepted' : 'Wrong Answer'),
+                time: '0.00',
                 memory: 0,
-                error: null
-            })),
-            totalTests: testCases.length,
-            passedTests: testCases.length,
-            allPassed: true,
-            executionTime: 50
+                error: result.error || null
+            }))
+
+            return {
+                results: formattedResults,
+                totalTests,
+                passedTests,
+                allPassed: passed,
+                executionTime
+            }
+
+        } catch (error) {
+            console.error('❌ [BACKEND] Execution failed:', error)
+
+            // Return structured error result
+            return {
+                results: testCases.map((tc, index) => ({
+                    testName: tc.description || `Test Case ${index + 1}`,
+                    input: tc.input,
+                    expectedOutput: tc.expectedOutput,
+                    actualOutput: '',
+                    passed: false,
+                    statusId: 7,
+                    statusDescription: 'Backend Error',
+                    time: '0.00',
+                    memory: 0,
+                    error: error.response?.data?.message || error.message || 'Backend execution failed'
+                })),
+                totalTests: testCases.length,
+                passedTests: 0,
+                allPassed: false,
+                executionTime: 0
+            }
         }
     }
 

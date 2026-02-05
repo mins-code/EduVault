@@ -11,6 +11,8 @@ import TopBar from './TopBar'
 import { executeCode as executeCodeLocally } from '../utils/codeExecutor'
 import { CHALLENGES } from '../data/challenges'
 
+import confetti from 'canvas-confetti'
+
 const ChallengeSolve = () => {
     const { id } = useParams()
     const navigate = useNavigate()
@@ -75,6 +77,14 @@ const ChallengeSolve = () => {
             setExecutionTime(results.executionTime || 0)
             setAllTestsPassed(results.allPassed)
 
+            if (results.allPassed) {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                })
+            }
+
             console.log(`✅ Local execution complete: ${results.passedTests}/${results.totalTests} passed`)
 
         } catch (error) {
@@ -105,9 +115,16 @@ const ChallengeSolve = () => {
             })
 
             if (response.data.success) {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                })
                 // Show success UI (confetti, modal, etc - using alert for now)
-                alert(response.data.badgeAwarded ? '🎉 Challenge Completed! Badge Earned!' : '✅ Challenge Completed!')
-                navigate('/challenges')
+                setTimeout(() => {
+                    alert(response.data.badgeAwarded ? '🎉 Challenge Completed! Badge Earned!' : '✅ Challenge Completed!')
+                    navigate('/challenges')
+                }, 1000)
             }
 
         } catch (error) {

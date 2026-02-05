@@ -5,13 +5,50 @@ const Submission = require('../models/Submission')
 const User = require('../models/User')
 const auth = require('../middleware/auth')
 const judge0Service = require('../services/judge0Service')
+const pistonService = require('../services/pistonService')
 
 // @route   POST /api/execute
-// @desc    Execute code against test cases using Judge0
+// @desc    Execute code against test cases using Piston API
 // @access  Private
 router.post('/', auth, async (req, res) => {
-    // Legacy Judge0 route - keeping for reference but deprecated
-    res.status(410).json({ message: 'Use /submit for client-side execution results' })
+    try {
+        const { code, language, testCases } = req.body
+
+        // Validate input
+        if (!code || !language || !testCases) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields: code, language, or testCases'
+            })
+        }
+
+        // Record start time for execution timing
+        const startTime = Date.now()
+
+        // Execute code with test cases using Piston service
+        const testResults = await pistonService.executeWithTests(code, language, testCases)
+
+        // Calculate execution time
+        const executionTime = Date.now() - startTime
+
+        // Return results
+        res.json({
+            success: true,
+            results: testResults.results,
+            passed: testResults.allPassed,
+            passedTests: testResults.passedTests,
+            totalTests: testResults.totalTests,
+            executionTime
+        })
+
+    } catch (error) {
+        console.error('❌ Code execution error:', error)
+        res.status(500).json({
+            success: false,
+            message: 'Code execution failed',
+            error: error.message
+        })
+    }
 })
 
 // @route   POST /api/execute/submit
